@@ -11,7 +11,7 @@ def _safe_int(value, default=0):
     if value is None or value == "":
         return default
     try:
-        return int(value)
+        return int(float(value))
     except (ValueError, TypeError):
         return default
 
@@ -60,21 +60,9 @@ class TPLinkRouter5GAPI:
         return await asyncio.to_thread(self.client.get_firmware)
 
     async def get_status(self):
-        """Get basic status including system uptime."""
+        """Get basic status."""
         await self._ensure_client()
-        status = await asyncio.to_thread(self.client.get_status)
-        # Ensure we have the system uptime if possible
-        if status and hasattr(status, 'uptime') and status.uptime is None:
-            # Manually fetch if library missed it
-            try:
-                ActItem = self.client.ActItem
-                act = ActItem(ActItem.GET, 'DEV2_DEV_INFO', '0,0,0,0,0,0', attrs=['uptime'])
-                _, values = await asyncio.to_thread(self.client.req_act, [act])
-                if values and values[0]:
-                    status.uptime = _safe_int(values[0].get('uptime'))
-            except:
-                pass
-        return status
+        return await asyncio.to_thread(self.client.get_status)
 
     async def get_lte_and_extra_status(self):
         """Fetch all LTE/5G and extra metrics in a single session."""
@@ -86,37 +74,36 @@ class TPLinkRouter5GAPI:
         def fetch_all():
             ActItem = self.client.ActItem
             acts = [
+                # 0: Link Config
                 ActItem(ActItem.GET, 'DEV2_LTE_LINK_CFG', '1,0,0,0,0,0', attrs=['enable', 'connectStatus', 'networkType', 'simStatus', 'roamingStatus', 'endcStatus']),
+                # 1: Data Usage
                 ActItem(ActItem.GET, 'DEV2_XTP_LTE_INTF_CFG', '1,0,0,0,0,0', attrs=['totalStatistics', 'curRxSpeed', 'curTxSpeed', 'dailyFlow', 'limitation', 'paymentDay']),
+                # 2: Net Status
                 ActItem(ActItem.GET, 'DEV2_LTE_NET_STATUS', '1,0,0,0,0,0', attrs=['smsUnreadCount', 'sigLevel', 'rfInfoRsrp', 'rfInfoRsrq', 'rfInfoSnr', 'smsSendResult', 'smsSendCause']),
+                # 3: ISP
                 ActItem(ActItem.GET, 'DEV2_LTE_PROF_STAT', '1,0,0,0,0,0', attrs=['ispName']),
+                # 4: Cells (5G Metrics)
                 ActItem(ActItem.GL, 'DEV2_LTE_SERVING_CELL_INFO', '0,0,0,0,0,0', attrs=[]),
             ]
             _, values = self.client.req_act(acts)
             return values
 
         values = await asyncio.to_thread(fetch_all)
-        _LOGGER.debug("Consolidated values received: %s", values)
         
         lte_status = LTEStatus()
         if values:
             try:
-                # v0: Link Config
                 if len(values) > 0 and values[0]:
                     v0 = values[0]
                     lte_status.enable = _safe_int(v0.get('enable'))
                     lte_status.connect_status = _safe_int(v0.get('connectStatus'))
                     lte_status.network_type = _safe_int(v0.get('networkType'))
                     lte_status.sim_status = _safe_int(v0.get('simStatus'))
-                
-                # v1: Interface Config
                 if len(values) > 1 and values[1]:
                     v1 = values[1]
                     lte_status.total_statistics = _safe_int(v1.get('totalStatistics'))
                     lte_status.cur_rx_speed = _safe_int(v1.get('curRxSpeed'))
                     lte_status.cur_tx_speed = _safe_int(v1.get('curTxSpeed'))
-                    
-                # v2: Net Status
                 if len(values) > 2 and values[2]:
                     v2 = values[2]
                     lte_status.sms_unread_count = _safe_int(v2.get('smsUnreadCount'))
@@ -124,12 +111,10 @@ class TPLinkRouter5GAPI:
                     lte_status.rsrp = _safe_int(v2.get('rfInfoRsrp'))
                     lte_status.rsrq = _safe_int(v2.get('rfInfoRsrq'))
                     lte_status.snr = _safe_int(v2.get('rfInfoSnr'))
-                    
-                # v3: ISP Name
                 if len(values) > 3 and values[3]:
                     lte_status.isp_name = values[3].get('ispName')
             except Exception as err:
-                _LOGGER.error("Error mapping lte_status: %s", err)
+                _LOGGER.debug("Error mapping LTE status: %s", err)
 
         # 2. Parse Extra Metrics
         extra = {}
@@ -142,8 +127,13 @@ class TPLinkRouter5GAPI:
                 extra["usage_limit"] = values[1].get("limitation")
                 extra["payment_day"] = values[1].get("paymentDay")
             if len(values) > 2 and values[2]:
-                extra["sms_send_result"] = values[2].get("smsSendResult")
-                extra["sms_send_cause"] = values[2].get("smsSendCause")
+                # Decode SMS result
+                res_code = _safe_int(values[2].get("smsSendResult"), 3)
+                extra["sms_send_result"] = {0:"Success", 1:"Fail", 2:"Sending", 3:"Idle"}.get(res_code, f"Unknown ({res_code})")
+                # Decode SMS cause
+                cause_code = _safe_int(values[2].get("smsSendCause"), 0)
+                extra["sms_send_cause"] = "None" if cause_code == 0 else f"Error {cause_code}"
+
             if len(values) > 4 and isinstance(values[4], list):
                 for cell in values[4]:
                     if cell.get('cellConnectionStatus') != '1':
@@ -151,7 +141,6 @@ class TPLinkRouter5GAPI:
                     net_type = cell.get('networkType')
                     prefix = "nr_" if net_type == '8' else "lte_"
                     for k, v in cell.items():
-                        # SS- metrics for 5G
                         if net_type == '8':
                             if k == 'SSRSRP': extra[f"{prefix}rsrp"] = v
                             elif k == 'SSRSRQ': extra[f"{prefix}rsrq"] = v
@@ -178,7 +167,7 @@ class TPLinkRouter5GAPI:
         return lte_status, extra
 
     async def get_ipv4_status(self):
-        """Get IPv4 status including DNS."""
+        """Get IPv4 status."""
         await self._ensure_client()
         if hasattr(self.client, "get_ipv4_status"):
             return await asyncio.to_thread(self.client.get_ipv4_status)

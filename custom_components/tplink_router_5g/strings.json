@@ -39,18 +39,23 @@
     "sensor": {
       "clients_total": { "name": "Total Clients" },
       "wifi_clients_total": { "name": "Total Main Wi-Fi Clients" },
+      "guest_wifi_clients_total": { "name": "Total Guest Wi-Fi Clients" },
+      "iot_clients_total": { "name": "Total IoT Clients" },
       "wired_clients_total": { "name": "Total Wired Clients" },
       "cpu_used": { "name": "CPU Used" },
       "memory_used": { "name": "Memory Used" },
       "lte_isp_name": { "name": "ISP Name" },
-      "sim_status_info": { "name": "SIM Status Info" },
+      "sim_status_info": { "name": "SIM Status" },
       "lan_ipv4_addr": { "name": "LAN IPv4 Address" },
       "wan_ipv4_addr": { "name": "WAN IPv4 Address" },
       "wan_ipv4_gateway": { "name": "WAN Gateway" },
       "primary_dns": { "name": "Primary DNS" },
       "secondary_dns": { "name": "Secondary DNS" },
+      "last_updated": { "name": "Last Updated" },
       "wan_uptime": { "name": "WAN Uptime" },
+      "device_uptime": { "name": "Device Uptime" },
       "lte_network_type": { "name": "Network Type" },
+      "lte_connection_status": { "name": "Connection Status" },
       "daily_usage": { "name": "Daily Data Usage" },
       "usage_limit": { "name": "Data Limit" },
       "payment_day": { "name": "Data Reset Day" },
@@ -58,7 +63,6 @@
       "lte_cur_rx_speed": { "name": "Download Speed" },
       "lte_cur_tx_speed": { "name": "Upload Speed" },
       "lte_sms_unread_count": { "name": "Unread SMS" },
-      "last_sms_content": { "name": "Latest SMS" },
       "sms_send_result": { "name": "Last SMS Send Result" },
       "sms_send_cause": { "name": "Last SMS Send Cause" },
       "nr_rsrp": { "name": "5G RSRP" },
@@ -84,7 +88,8 @@
     },
     "binary_sensor": {
       "roaming": { "name": "Roaming Status" },
-      "endc_support": { "name": "5G ENDC Support" }
+      "endc_support": { "name": "5G ENDC Support" },
+      "best_connection": { "name": "Best Connection" }
     },
     "button": {
       "reboot": { "name": "Reboot" }

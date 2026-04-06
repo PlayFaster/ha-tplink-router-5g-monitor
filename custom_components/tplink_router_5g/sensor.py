@@ -2,6 +2,7 @@
 
 from dataclasses import dataclass
 from collections.abc import Callable
+from datetime import timedelta
 from typing import Any, Final
 import logging
 
@@ -21,19 +22,12 @@ from homeassistant.const import (
 )
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.helpers.device_registry import CONNECTION_NETWORK_MAC
+from homeassistant.util import dt as dt_util
 
 from .const import DOMAIN
 from .coordinator import TPLinkRouterDataUpdateCoordinator
 
 _LOGGER = logging.getLogger(__name__)
-
-def _safe_int(value):
-    """Safely convert value to int for templates."""
-    if value is None: return None
-    try:
-        return int(value)
-    except (ValueError, TypeError):
-        return None
 
 @dataclass(frozen=True, kw_only=True)
 class TPLinkSensorEntityDescription(SensorEntityDescription):
@@ -118,22 +112,12 @@ SENSOR_TYPES: Final[tuple[TPLinkSensorEntityDescription, ...]] = (
         value_fn=lambda data: data["ipv4_status"].wan_ipv4_snddns if data["ipv4_status"] else None,
     ),
     TPLinkSensorEntityDescription(
-        key="wan_uptime",
-        name="WAN Uptime",
-        icon="mdi:timer-outline",
-        device_class=SensorDeviceClass.DURATION,
-        native_unit_of_measurement="s",
+        key="last_updated",
+        name="Last Updated",
+        icon="mdi:update",
+        device_class=SensorDeviceClass.TIMESTAMP,
         entity_category=EntityCategory.DIAGNOSTIC,
-        value_fn=lambda data: _safe_int(data["status"].wan_ipv4_uptime),
-    ),
-    TPLinkSensorEntityDescription(
-        key="device_uptime",
-        name="Device Uptime",
-        icon="mdi:timer-sand",
-        device_class=SensorDeviceClass.DURATION,
-        native_unit_of_measurement="s",
-        entity_category=EntityCategory.DIAGNOSTIC,
-        value_fn=lambda data: _safe_int(data["status"].uptime),
+        value_fn=lambda data: None, # Handled in native_value
     ),
     
     # --- Main Device: Connection Metrics ---
@@ -443,9 +427,18 @@ EXTRA_LTE_SENSOR_TYPES: Final[tuple[TPLinkSensorEntityDescription, ...]] = (
         value_fn=lambda data: data["extra_lte_status"].get("lte_rssi"),
     ),
     TPLinkSensorEntityDescription(
+        key="lte_anchor_rsrq",
+        name="LTE Anchor RSRQ",
+        icon="mdi:signal-cellular-2",
+        state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement="dB",
+        sensor_type="extra_lte_status",
+        value_fn=lambda data: data["extra_lte_status"].get("lte_rsrq"),
+    ),
+    TPLinkSensorEntityDescription(
         key="lte_anchor_band",
         name="LTE Anchor Band",
-        icon="mdi:cellphone-tower",
+        icon="mdi:radio-tower",
         sensor_type="extra_lte_status",
         value_fn=lambda data: f"B{data['extra_lte_status'].get('lte_band')}" if data["extra_lte_status"].get('lte_band') else None,
     ),
@@ -491,7 +484,6 @@ class TPLinkRouterSensor(CoordinatorEntity[TPLinkRouterDataUpdateCoordinator], S
         self.entity_description = description
         self._entry = entry
         self._attr_unique_id = f"{entry.unique_id}_{description.key}"
-        # Force icon from description
         if description.icon:
             self._attr_icon = description.icon
 
@@ -500,6 +492,13 @@ class TPLinkRouterSensor(CoordinatorEntity[TPLinkRouterDataUpdateCoordinator], S
         """Return the value of the sensor."""
         if not self.coordinator.data:
             return None
+        
+        key = self.entity_description.key
+        
+        # Special case: Last Updated
+        if key == "last_updated":
+            return self.coordinator.last_update_success_time
+
         try:
             return self.entity_description.value_fn(self.coordinator.data)
         except (KeyError, AttributeError):

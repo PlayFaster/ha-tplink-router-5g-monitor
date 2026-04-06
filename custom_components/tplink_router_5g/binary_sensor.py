@@ -36,6 +36,15 @@ BINARY_SENSORS: Final[tuple[TPLinkBinarySensorEntityDescription, ...]] = (
         entity_category=EntityCategory.DIAGNOSTIC,
         value_fn=lambda data: data["extra_lte_status"].get("endc_support") == "1",
     ),
+    TPLinkBinarySensorEntityDescription(
+        key="best_connection",
+        name="Best Connection",
+        device_class=BinarySensorDeviceClass.CONNECTIVITY,
+        value_fn=lambda data: (
+            data["extra_lte_status"].get("endc_support") == "1" and
+            data["extra_lte_status"].get("nr_dl_mod") == "256QAM"
+        ),
+    ),
 )
 
 async def async_setup_entry(hass, entry, async_add_entities):
@@ -67,11 +76,11 @@ class TPLinkRouterBinarySensor(CoordinatorEntity[TPLinkRouterDataUpdateCoordinat
     def device_info(self):
         """Return device information."""
         host = self._entry.options[CONF_HOST]
-        # Binary sensors are currently only for the main device
-        identifiers = {(DOMAIN, self.coordinator.mac)} if self.coordinator.mac else {(DOMAIN, host)}
+        main_identifiers = {(DOMAIN, self.coordinator.mac)} if self.coordinator.mac else {(DOMAIN, host)}
         connections = {(CONNECTION_NETWORK_MAC, self.coordinator.mac)} if self.coordinator.mac else set()
+        
         return {
-            "identifiers": identifiers,
+            "identifiers": main_identifiers,
             "connections": connections,
             "name": self._entry.title,
             "manufacturer": "TP-Link",
