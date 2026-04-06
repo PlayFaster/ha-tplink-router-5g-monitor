@@ -5,6 +5,7 @@ All notable changes to the `tplink_router_5g` custom component will be documente
 ## [1.0.0] - 2026-04-06
 
 ### Added
+
 - **Sub-Device Architecture**: Entities are now logically grouped into linked devices:
   - **Main**: Diagnostic and signal health.
   - **Data**: Usage statistics and speed metrics.
@@ -16,7 +17,7 @@ All notable changes to the `tplink_router_5g` custom component will be documente
   - **Modulation & Coding**: Added DL/UL Modulation (e.g., 256QAM) and MCS (Modulation and Coding Scheme) sensors.
   - **Advanced RF**: Added CQI, PMI, RI, TBS, and RBS diagnostics for precise link quality monitoring.
   - **Signal Fidelity**: Added dedicated "Signal Strength %" sensors matching the router's GUI bars.
-- **Enhanced Uptime Tracking**: 
+- **Enhanced Uptime Tracking**:
   - Restored **Device Uptime** and **WAN Uptime** as high-fidelity `TIMESTAMP` sensors.
   - Implemented string-to-seconds parsing to handle the router's formatted uptime display ("X days HH:MM:SS").
 - **Best Connection Sensor**: New binary sensor that indicates an optimal connection when 5G ENDC is active and 256QAM modulation is achieved.
@@ -26,6 +27,7 @@ All notable changes to the `tplink_router_5g` custom component will be documente
 - **Additional Client Tracking**: Added specialized counters for "Total Guest" and "Total IoT" clients.
 
 ### Changed
+
 - **Traffic Consolidation**: Merged multiple OID requests into a single efficient `req_act` call to reduce session overhead and prevent router timeouts.
 - **Performance Engine**: Migrated to `DataUpdateCoordinator` pattern with 0.5s "breathing" delays between independent library calls for increased stability.
 - **Device Identification**: Switched to using the LAN MAC address as the primary identifier and included it in the `connections` attribute for full Home Assistant UI support.
@@ -33,12 +35,14 @@ All notable changes to the `tplink_router_5g` custom component will be documente
 - **Future-Proofing**: Updated `via_device` references to ensure compatibility with Home Assistant 2025.12+ architecture.
 
 ### Fixed
+
 - **Numeric Measurement Errors**: Resolved `ValueError` crashes by ensuring all technical metrics return raw numbers instead of formatted strings.
 - **Object Attribute Errors**: Fixed `AttributeError` by isolating custom-probed data into the `extra_lte_status` dictionary.
 - **Unique ID Conflicts**: Eliminated duplicate SIM Status sensors causing registry errors.
 - **Service Registration**: Fully implemented `services.yaml` for the `send_sms` service.
 
 ### Technical Documentation
+
 - **Discovery Logs**: Detailed research documented in:
   - `docs/GETTING_5G_INFO.md` (5G NR technicals)
   - `docs/SMS_OPTIONS_CHECKED.md` (Inbox probing attempts)

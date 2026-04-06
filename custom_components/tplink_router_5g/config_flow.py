@@ -1,13 +1,14 @@
 """Config flow for TP-Link Router 5G integration."""
 
 import logging
+
 import voluptuous as vol
 from homeassistant import config_entries
 from homeassistant.const import CONF_HOST, CONF_PASSWORD, CONF_USERNAME, CONF_VERIFY_SSL
-from homeassistant.data_entry_flow import AbortFlow, FlowResultType
+from homeassistant.data_entry_flow import AbortFlow
 
 from .api import TPLinkRouter5GAPI
-from .const import DEFAULT_NAME, DOMAIN, CONF_SCAN_INTERVAL
+from .const import CONF_SCAN_INTERVAL, DEFAULT_NAME, DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
 

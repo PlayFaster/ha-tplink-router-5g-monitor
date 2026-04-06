@@ -14,7 +14,7 @@ from homeassistant.const import (
 )
 from homeassistant.helpers.entity import EntityCategory
 
-from .const import DOMAIN, CONF_SCAN_INTERVAL
+from .const import CONF_SCAN_INTERVAL, DOMAIN
 from .coordinator import TPLinkRouterDataUpdateCoordinator
 
 _LOGGER = logging.getLogger(__name__)
@@ -55,10 +55,10 @@ class TPLinkPollingInterval(NumberEntity):
         """Update the setting."""
         self._attr_native_value = value
         self.async_write_ha_state()
-        
+
         if self._refresh_task:
             self._refresh_task.cancel()
-        
+
         self._refresh_task = asyncio.create_task(self._async_debounced_apply(value))
 
     async def _async_debounced_apply(self, value: float):
@@ -67,11 +67,11 @@ class TPLinkPollingInterval(NumberEntity):
             await asyncio.sleep(2)
             val_int = int(value)
             self.coordinator.update_interval = timedelta(seconds=val_int)
-            
+
             new_options = dict(self._entry.options)
             new_options[CONF_SCAN_INTERVAL] = val_int
             self.hass.config_entries.async_update_entry(self._entry, options=new_options)
-            
+
             await self.coordinator.async_request_refresh()
         except asyncio.CancelledError:
             pass
@@ -94,7 +94,7 @@ class TPLinkPollingInterval(NumberEntity):
         """Return device information linking to the main router device."""
         host = self._entry.options[CONF_HOST]
         main_identifiers = {(DOMAIN, self.coordinator.mac)} if self.coordinator.mac else {(DOMAIN, f"host_{host}")}
-        
+
         return {
             "identifiers": main_identifiers,
             "name": self._entry.title,

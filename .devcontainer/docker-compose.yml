@@ -17,4 +17,3 @@ services:
     restart: unless-stopped
     environment:
       - TZ=Europe/London
-

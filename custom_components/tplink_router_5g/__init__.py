@@ -1,12 +1,13 @@
 """The TP-Link Router 5G integration."""
 
 import logging
+
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_HOST, CONF_PASSWORD, CONF_USERNAME, Platform
 from homeassistant.core import HomeAssistant, ServiceCall
 
 from .api import TPLinkRouter5GAPI
-from .const import DOMAIN, CONF_VERIFY_SSL
+from .const import CONF_VERIFY_SSL, DOMAIN
 from .coordinator import TPLinkRouterDataUpdateCoordinator
 
 _LOGGER = logging.getLogger(__name__)

@@ -1,8 +1,9 @@
 """TP-Link Router 5G API client."""
 
-import logging
 import asyncio
-from tplinkrouterc6u import TplinkRouterProvider, LTEStatus
+import logging
+
+from tplinkrouterc6u import LTEStatus, TplinkRouterProvider
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -101,7 +102,7 @@ class TPLinkRouter5GAPI:
             return values
 
         values = await asyncio.to_thread(fetch_all)
-        
+
         lte_status = LTEStatus()
         extra = {}
         if values:
@@ -162,7 +163,7 @@ class TPLinkRouter5GAPI:
                                 if k == 'RSRP': extra[f"{prefix}rsrp"] = _safe_int(v)
                                 elif k == 'RSRQ': extra[f"{prefix}rsrq"] = _safe_int(v)
                                 elif k == 'SNR': extra[f"{prefix}snr"] = _safe_int(v)
-                            
+
                             if k == 'band': extra[f"{prefix}band"] = v
                             elif k == 'RSSI': extra[f"{prefix}rssi"] = _safe_int(v)
                             elif k == 'PCI': extra[f"{prefix}pci"] = v

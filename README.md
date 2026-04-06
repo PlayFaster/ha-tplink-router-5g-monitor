@@ -3,22 +3,17 @@
 ![HACS Integration](https://img.shields.io/badge/HACS-Integration-orange.svg) ![HACS Custom](https://img.shields.io/badge/HACS-Custom-41BDF5?logo=homeassistant&logoColor=white) ![Latest Release](https://img.shields.io/github/v/release/PlayFaster/ha-TP-Link-router-5g-monitor?label=Release&logo=github) [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0) [![Validate](https://github.com/PlayFaster/ha-TP-Link-router-5g-monitor/actions/workflows/validate.yaml/badge.svg)](https://github.com/PlayFaster/ha-TP-Link-router-5g-monitor/actions/workflows/validate.yaml) ![Coverage](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/PlayFaster/ha-TP-Link-router-5g-monitor/python-coverage-comment-action-data/coverage-badge.json) ![Last Commit](https://img.shields.io/github/last-commit/PlayFaster/ha-TP-Link-router-5g-monitor?label=Last%20commit)
 
 Home Assistant integration for TP-Link MC7010 5G Router that provides detailed signal statistics, data usage tracking, and SMS management.
-  
+
 ## Supported Models
 
-- **TP-Link MC7010** – 5G Outdoor CPE.
-This works with, and has only been tested with, TP-Link MC7010. It may work with other similar TP-Link devices.
-  
+- **TP-Link MC7010** – 5G Outdoor CPE. This works with, and has only been tested with, TP-Link MC7010. It may work with other similar TP-Link devices.
+
 ## ✅ Features
 
 - **Signal Monitoring**: Real-time RSRP, RSRQ, RSSI, and SNR for both LTE and 5G.
-  
 - **Data Tracking**: Monthly download, upload, and total usage (GB).
-  
 - **SMS Management**: View recent messages and delete the mailbox directly from HA.
-  
 - **Categorized Devices**: Separate devices for Router Stats, Data Usage, and SMS Services.
-  
 - **Resilient Polling**: Includes a hybrid retry logic (30s retry) and stale-data grace periods to prevent "Unavailable" flickers during router reboots.
 
 - **Pause Polling**: Switch to allow uninterrupted access to the router webui if needed (TP-Link only allow a single login).
@@ -84,4 +79,3 @@ This project uses the Apache License, Version 2.0, for more details see the [lic
 ---
 
 **For issues, feature requests, or contributions, please visit the [GitHub repository](https://github.com/PlayFaster/ha-TP-Link-router-5g-monitor).**
-

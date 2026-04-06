@@ -1,12 +1,12 @@
 """Button platform for TP-Link Router 5G."""
 
-from dataclasses import dataclass
 import logging
+from dataclasses import dataclass
 
 from homeassistant.components.button import (
+    ButtonDeviceClass,
     ButtonEntity,
     ButtonEntityDescription,
-    ButtonDeviceClass,
 )
 from homeassistant.const import (
     CONF_HOST,
@@ -21,6 +21,7 @@ _LOGGER = logging.getLogger(__name__)
 @dataclass(frozen=True, kw_only=True)
 class TPLinkButtonEntityDescription(ButtonEntityDescription):
     """Describes TP-Link button entity."""
+
     group: str = "main"
 
 BUTTON_TYPES = (
@@ -36,11 +37,11 @@ BUTTON_TYPES = (
 async def async_setup_entry(hass, entry, async_add_entities):
     """Set up the button platform."""
     coordinator: TPLinkRouterDataUpdateCoordinator = hass.data[DOMAIN][entry.entry_id]
-    
+
     entities = []
     for description in BUTTON_TYPES:
         entities.append(TPLinkRebootButton(coordinator, entry, description))
-        
+
     async_add_entities(entities)
 
 class TPLinkRebootButton(CoordinatorEntity[TPLinkRouterDataUpdateCoordinator], ButtonEntity):
@@ -68,7 +69,7 @@ class TPLinkRebootButton(CoordinatorEntity[TPLinkRouterDataUpdateCoordinator], B
         """Return device information linking to the main router device."""
         host = self._entry.options[CONF_HOST]
         main_identifiers = {(DOMAIN, self.coordinator.mac)} if self.coordinator.mac else {(DOMAIN, f"host_{host}")}
-        
+
         return {
             "identifiers": main_identifiers,
             "name": self._entry.title,

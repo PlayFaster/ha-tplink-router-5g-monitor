@@ -1,26 +1,26 @@
 """Sensor platform for TP-Link Router 5G."""
 
-from dataclasses import dataclass
-from collections.abc import Callable
-from typing import Any, Final
 import logging
+from collections.abc import Callable
+from dataclasses import dataclass
+from typing import Any, Final
 
 from homeassistant.components.sensor import (
-    SensorStateClass,
+    SensorDeviceClass,
     SensorEntity,
     SensorEntityDescription,
-    SensorDeviceClass,
+    SensorStateClass,
 )
 from homeassistant.const import (
+    CONF_HOST,
     PERCENTAGE,
     SIGNAL_STRENGTH_DECIBELS_MILLIWATT,
+    EntityCategory,
     UnitOfDataRate,
     UnitOfInformation,
-    CONF_HOST,
-    EntityCategory,
 )
-from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.helpers.device_registry import CONNECTION_NETWORK_MAC
+from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import DOMAIN
 from .coordinator import TPLinkRouterDataUpdateCoordinator
@@ -30,6 +30,7 @@ _LOGGER = logging.getLogger(__name__)
 @dataclass(frozen=True, kw_only=True)
 class TPLinkSensorEntityDescription(SensorEntityDescription):
     """Describes TP-Link sensor entity."""
+
     value_fn: Callable[[Any], Any]
     sensor_type: str = "status"
     group: str = "main"
@@ -117,7 +118,7 @@ SENSOR_TYPES: Final[tuple[TPLinkSensorEntityDescription, ...]] = (
         entity_category=EntityCategory.DIAGNOSTIC,
         value_fn=lambda data: None, # Handled in native_value
     ),
-    
+
     # --- Main Device: Connection Metrics ---
     TPLinkSensorEntityDescription(
         key="lte_connection_status",
@@ -704,14 +705,14 @@ EXTRA_LTE_SENSOR_TYPES: Final[tuple[TPLinkSensorEntityDescription, ...]] = (
 async def async_setup_entry(hass, entry, async_add_entities):
     """Set up the sensor platform."""
     coordinator: TPLinkRouterDataUpdateCoordinator = hass.data[DOMAIN][entry.entry_id]
-    
+
     entities = []
     for description in SENSOR_TYPES:
         entities.append(TPLinkRouterSensor(coordinator, entry, description))
-        
+
     for description in EXTRA_LTE_SENSOR_TYPES:
         entities.append(TPLinkRouterSensor(coordinator, entry, description))
-        
+
     async_add_entities(entities)
 
 class TPLinkRouterSensor(CoordinatorEntity[TPLinkRouterDataUpdateCoordinator], SensorEntity):
@@ -734,9 +735,9 @@ class TPLinkRouterSensor(CoordinatorEntity[TPLinkRouterDataUpdateCoordinator], S
         """Return the value of the sensor."""
         if not self.coordinator.data:
             return None
-        
+
         key = self.entity_description.key
-        
+
         # Special case: Last Updated
         if key == "last_updated":
             return self.coordinator.last_update_success_time
@@ -751,9 +752,9 @@ class TPLinkRouterSensor(CoordinatorEntity[TPLinkRouterDataUpdateCoordinator], S
         """Return device information with sub-device support."""
         host = self._entry.options[CONF_HOST]
         group = self.entity_description.group
-        
+
         main_identifiers = {(DOMAIN, self.coordinator.mac)} if self.coordinator.mac else {(DOMAIN, f"host_{host}")}
-        
+
         if group == "main":
             connections = {(CONNECTION_NETWORK_MAC, self.coordinator.mac)} if self.coordinator.mac else set()
             return {
@@ -766,15 +767,15 @@ class TPLinkRouterSensor(CoordinatorEntity[TPLinkRouterDataUpdateCoordinator], S
                 "hw_version": self.coordinator.firmware.hardware_version if self.coordinator.firmware else None,
                 "configuration_url": f"http://{host}",
             }
-            
+
         group_names = {"sms": "SMS", "wifi": "Wi-Fi", "data": "Data", "clients": "Clients"}
         display_group = group_names.get(group, group.capitalize())
         sub_name = f"{self._entry.title} {display_group}"
-        
+
         sub_id_prefix = self.coordinator.mac if self.coordinator.mac else f"host_{host}"
         identifiers_list = list(main_identifiers)
         via_device = identifiers_list[0] if identifiers_list else (DOMAIN, host)
-        
+
         return {
             "identifiers": {(DOMAIN, f"{sub_id_prefix}_{group}")},
             "name": sub_name,
