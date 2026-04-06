@@ -27,6 +27,14 @@ from .coordinator import TPLinkRouterDataUpdateCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 
+def _safe_int(value):
+    """Safely convert value to int for templates."""
+    if value is None: return None
+    try:
+        return int(value)
+    except (ValueError, TypeError):
+        return None
+
 @dataclass(frozen=True, kw_only=True)
 class TPLinkSensorEntityDescription(SensorEntityDescription):
     """Describes TP-Link sensor entity."""
@@ -89,7 +97,7 @@ SENSOR_TYPES: Final[tuple[TPLinkSensorEntityDescription, ...]] = (
     TPLinkSensorEntityDescription(
         key="wan_ipv4_gateway",
         name="WAN Gateway",
-        icon="mdi:gateway",
+        icon="mdi:router-network",
         entity_category=EntityCategory.DIAGNOSTIC,
         value_fn=lambda data: data["status"].wan_ipv4_gateway,
     ),
@@ -116,7 +124,16 @@ SENSOR_TYPES: Final[tuple[TPLinkSensorEntityDescription, ...]] = (
         device_class=SensorDeviceClass.DURATION,
         native_unit_of_measurement="s",
         entity_category=EntityCategory.DIAGNOSTIC,
-        value_fn=lambda data: data["status"].wan_ipv4_uptime,
+        value_fn=lambda data: _safe_int(data["status"].wan_ipv4_uptime),
+    ),
+    TPLinkSensorEntityDescription(
+        key="device_uptime",
+        name="Device Uptime",
+        icon="mdi:timer-sand",
+        device_class=SensorDeviceClass.DURATION,
+        native_unit_of_measurement="s",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=lambda data: _safe_int(data["status"].uptime),
     ),
     
     # --- Main Device: Connection Metrics ---
@@ -130,6 +147,7 @@ SENSOR_TYPES: Final[tuple[TPLinkSensorEntityDescription, ...]] = (
             1: "Connecting",
             2: "Connected",
             3: "Disconnecting",
+            4: "Connected",
         }.get(data["lte_status"].connect_status, f"Unknown ({data['lte_status'].connect_status})") if data["lte_status"] else None,
     ),
     TPLinkSensorEntityDescription(
@@ -320,9 +338,9 @@ EXTRA_LTE_SENSOR_TYPES: Final[tuple[TPLinkSensorEntityDescription, ...]] = (
     TPLinkSensorEntityDescription(
         key="nr_band",
         name="5G Band",
-        icon="mdi:antenna-tower",
+        icon="mdi:radio-tower",
         sensor_type="extra_lte_status",
-        value_fn=lambda data: f"N{data['extra_lte_status'].get('nr_band')}" if data["extra_lte_status"].get("nr_band") else None,
+        value_fn=lambda data: f"N{data['extra_lte_status'].get('nr_band')}" if data["extra_lte_status"].get('nr_band') else None,
     ),
     TPLinkSensorEntityDescription(
         key="nr_dl_mod",
@@ -343,7 +361,7 @@ EXTRA_LTE_SENSOR_TYPES: Final[tuple[TPLinkSensorEntityDescription, ...]] = (
         name="5G Bandwidth",
         icon="mdi:arrow-expand-horizontal",
         sensor_type="extra_lte_status",
-        value_fn=lambda data: f"{data['extra_lte_status'].get('nr_dl_bw')}MHz" if data["extra_lte_status"].get("nr_dl_bw") else None,
+        value_fn=lambda data: f"{data['extra_lte_status'].get('nr_dl_bw')}MHz" if data["extra_lte_status"].get('nr_dl_bw') else None,
     ),
     TPLinkSensorEntityDescription(
         key="nr_cqi",
@@ -427,9 +445,9 @@ EXTRA_LTE_SENSOR_TYPES: Final[tuple[TPLinkSensorEntityDescription, ...]] = (
     TPLinkSensorEntityDescription(
         key="lte_anchor_band",
         name="LTE Anchor Band",
-        icon="mdi:antenna-tower",
+        icon="mdi:cellphone-tower",
         sensor_type="extra_lte_status",
-        value_fn=lambda data: f"B{data['extra_lte_status'].get('lte_band')}" if data["extra_lte_status"].get("lte_band") else None,
+        value_fn=lambda data: f"B{data['extra_lte_status'].get('lte_band')}" if data["extra_lte_status"].get('lte_band') else None,
     ),
     TPLinkSensorEntityDescription(
         key="lte_anchor_bw",
@@ -473,6 +491,9 @@ class TPLinkRouterSensor(CoordinatorEntity[TPLinkRouterDataUpdateCoordinator], S
         self.entity_description = description
         self._entry = entry
         self._attr_unique_id = f"{entry.unique_id}_{description.key}"
+        # Force icon from description
+        if description.icon:
+            self._attr_icon = description.icon
 
     @property
     def native_value(self):
