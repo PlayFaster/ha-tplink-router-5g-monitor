@@ -2,7 +2,6 @@
 
 from dataclasses import dataclass
 from collections.abc import Callable
-from datetime import timedelta
 from typing import Any, Final
 import logging
 
@@ -22,7 +21,6 @@ from homeassistant.const import (
 )
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.helpers.device_registry import CONNECTION_NETWORK_MAC
-from homeassistant.util import dt as dt_util
 
 from .const import DOMAIN
 from .coordinator import TPLinkRouterDataUpdateCoordinator
@@ -115,22 +113,6 @@ SENSOR_TYPES: Final[tuple[TPLinkSensorEntityDescription, ...]] = (
         key="last_updated",
         name="Last Updated",
         icon="mdi:update",
-        device_class=SensorDeviceClass.TIMESTAMP,
-        entity_category=EntityCategory.DIAGNOSTIC,
-        value_fn=lambda data: None, # Handled in native_value
-    ),
-    TPLinkSensorEntityDescription(
-        key="wan_uptime",
-        name="WAN Uptime",
-        icon="mdi:timer-outline",
-        device_class=SensorDeviceClass.TIMESTAMP,
-        entity_category=EntityCategory.DIAGNOSTIC,
-        value_fn=lambda data: None, # Handled in native_value
-    ),
-    TPLinkSensorEntityDescription(
-        key="device_uptime",
-        name="Device Uptime",
-        icon="mdi:clock-start",
         device_class=SensorDeviceClass.TIMESTAMP,
         entity_category=EntityCategory.DIAGNOSTIC,
         value_fn=lambda data: None, # Handled in native_value
@@ -758,25 +740,6 @@ class TPLinkRouterSensor(CoordinatorEntity[TPLinkRouterDataUpdateCoordinator], S
         # Special case: Last Updated
         if key == "last_updated":
             return self.coordinator.last_update_success_time
-
-        # Special case: Uptime calculation (return boot timestamp)
-        if key in ["wan_uptime", "device_uptime"]:
-            uptime_secs_key = "wan_uptime_secs" if key == "wan_uptime" else "sys_uptime_secs"
-            uptime_seconds = self.coordinator.data["extra_lte_status"].get(uptime_secs_key)
-            
-            if uptime_seconds is None:
-                return None
-            try:
-                seconds = int(float(uptime_seconds))
-                if seconds <= 0: return None
-                boot_time = dt_util.now() - timedelta(seconds=seconds)
-                return boot_time.replace(second=0, microsecond=0)
-            except (TypeError, ValueError) as err:
-                _LOGGER.debug("Failed to convert uptime to seconds: %s", err)
-                return None
-            except Exception as err:
-                _LOGGER.error("Unexpected error calculating uptime: %s", err)
-                return None
 
         try:
             return self.entity_description.value_fn(self.coordinator.data)

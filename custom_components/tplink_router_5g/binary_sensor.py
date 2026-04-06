@@ -35,7 +35,7 @@ BINARY_SENSORS: Final[tuple[TPLinkBinarySensorEntityDescription, ...]] = (
     TPLinkBinarySensorEntityDescription(
         key="endc_support",
         name="5G ENDC Support",
-        icon="mdi:css3",
+        icon="mdi:network-5g",
         group="main",
     ),
     TPLinkBinarySensorEntityDescription(
