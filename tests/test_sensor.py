@@ -48,6 +48,35 @@ def test_sensor_device_info(mock_coordinator, mock_config_entry):
     assert info_data["identifiers"] == {(DOMAIN, "host_192.168.253.1_data")}
 
 
+def test_sensor_last_updated(mock_coordinator, mock_config_entry):
+    """Test the last updated sensor."""
+    from homeassistant.util import dt as dt_util
+
+    now = dt_util.now()
+    mock_coordinator.last_update_success_time = now
+    mock_coordinator.data = {"status": MagicMock()}
+
+    description = next(d for d in SENSOR_TYPES if d.key == "last_updated")
+    sensor = TPLinkRouterSensor(mock_coordinator, mock_config_entry, description)
+    assert sensor.native_value == now
+
+
+def test_sensor_ipv4_status(mock_coordinator, mock_config_entry):
+    """Test IPv4 status sensor extraction."""
+    mock_coordinator.data = {"ipv4_status": MagicMock(wan_ipv4_pridns="8.8.8.8")}
+    description = next(d for d in SENSOR_TYPES if d.key == "primary_dns")
+    sensor = TPLinkRouterSensor(mock_coordinator, mock_config_entry, description)
+    assert sensor.native_value == "8.8.8.8"
+
+
+def test_sensor_no_data(mock_coordinator, mock_config_entry):
+    """Test sensor behavior when no data is available."""
+    mock_coordinator.data = None
+    description = next(d for d in SENSOR_TYPES if d.key == "cpu_used")
+    sensor = TPLinkRouterSensor(mock_coordinator, mock_config_entry, description)
+    assert sensor.native_value is None
+
+
 @pytest.mark.asyncio
 async def test_sensor_setup_entry():
     """Test platform setup."""

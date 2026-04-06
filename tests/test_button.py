@@ -16,8 +16,10 @@ from custom_components.tplink_router_5g.const import DOMAIN
 async def test_reboot_button_press(mock_coordinator, mock_config_entry):
     """Test reboot button trigger."""
     description = next(d for d in BUTTON_TYPES if d.key == "reboot")
-    # Ensure API method is AsyncMock
+    # Ensure API methods are AsyncMock
+    mock_coordinator.api.login = AsyncMock()
     mock_coordinator.api.reboot = AsyncMock()
+    mock_coordinator.api.logout = AsyncMock()
     button = TPLinkRebootButton(mock_coordinator, mock_config_entry, description)
 
     await button.async_press()

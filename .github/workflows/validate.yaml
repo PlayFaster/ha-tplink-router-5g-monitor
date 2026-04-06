@@ -96,6 +96,7 @@ jobs:
             tests/
 
       - name: Pytest coverage comment
+        id: coverageComment # Added ID to access the badge output
         uses: MishaKav/pytest-coverage-comment@main
         with:
           pytest-xml-coverage-path: ./coverage.xml

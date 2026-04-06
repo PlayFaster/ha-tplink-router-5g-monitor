@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from homeassistant.const import CONF_HOST, CONF_PASSWORD, CONF_USERNAME
-from homeassistant.data_entry_flow import FlowResultType
+from homeassistant.data_entry_flow import AbortFlow, FlowResultType
 
 from custom_components.tplink_router_5g.config_flow import (
     TPLinkRouter5GConfigFlow,
@@ -29,6 +29,33 @@ async def test_validate_credentials_success():
         await _validate_credentials(user_input)
         mock_api.login.assert_called_once()
         mock_api.logout.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_config_flow_user_step_already_configured():
+    """Test user step when host is already configured."""
+    flow = TPLinkRouter5GConfigFlow()
+    flow.hass = MagicMock()
+    flow.context = {}
+
+    # Mock existing entry
+    flow.hass.config_entries.async_entry_for_domain_unique_id.return_value = MagicMock()
+
+    user_input = {
+        CONF_HOST: "192.168.253.1",
+        CONF_PASSWORD: "password",
+    }
+
+    with (
+        patch(
+            "custom_components.tplink_router_5g.config_flow._validate_credentials",
+            return_value=None,
+        ),
+        pytest.raises(AbortFlow) as excinfo,
+    ):
+        await flow.async_step_user(user_input)
+
+    assert excinfo.value.reason == "already_configured"
 
 
 @pytest.mark.asyncio

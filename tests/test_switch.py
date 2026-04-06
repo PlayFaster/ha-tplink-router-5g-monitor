@@ -36,6 +36,48 @@ async def test_wifi_switch(mock_coordinator, mock_config_entry):
 
 
 @pytest.mark.asyncio
+async def test_wifi_switch_error(mock_coordinator, mock_config_entry):
+    """Test error handling in wifi switch and ensure logout is called."""
+    description = next(d for d in WIFI_SWITCHES if d.key == "wifi_2g_main")
+    switch = TPLinkWifiSwitch(mock_coordinator, mock_config_entry, description)
+
+    mock_coordinator.api.login = AsyncMock()
+    mock_coordinator.api.logout = AsyncMock()
+    mock_coordinator.api.set_wifi = AsyncMock(side_effect=Exception("Set fail"))
+
+    with pytest.raises(Exception, match="Set fail"):
+        await switch.async_turn_on()
+
+    mock_coordinator.api.logout.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_wifi_switch_no_status(mock_coordinator, mock_config_entry):
+    """Test is_on when status data is missing."""
+    description = next(d for d in WIFI_SWITCHES if d.key == "wifi_2g_main")
+    switch = TPLinkWifiSwitch(mock_coordinator, mock_config_entry, description)
+
+    # 1. No data at all
+    mock_coordinator.data = None
+    assert switch.is_on is False
+
+    # 2. No status key
+    mock_coordinator.data = {}
+    assert switch.is_on is False
+
+
+def test_wifi_switch_device_info_mac(mock_coordinator, mock_config_entry):
+    """Test device_info when MAC is available."""
+    description = next(d for d in WIFI_SWITCHES if d.key == "wifi_2g_main")
+    switch = TPLinkWifiSwitch(mock_coordinator, mock_config_entry, description)
+
+    mock_coordinator.mac = "AA:BB:CC:DD:EE:FF"
+    info = switch.device_info
+    assert info["identifiers"] == {(DOMAIN, "AA:BB:CC:DD:EE:FF_wifi")}
+    assert info["via_device"] == (DOMAIN, "AA:BB:CC:DD:EE:FF")
+
+
+@pytest.mark.asyncio
 async def test_pause_polling_switch(mock_coordinator, mock_config_entry):
     """Test turning the pause switch on and off."""
     mock_config_entry.options[CONF_STOP_POLLING] = False

@@ -85,7 +85,7 @@ class TPLinkRouterDataUpdateCoordinator(DataUpdateCoordinator):
                 self.consecutive_failures = 0
                 return data
 
-        except asyncio.TimeoutError as err:
+        except TimeoutError as err:
             self.consecutive_failures += 1
             if self.data is not None and self.consecutive_failures <= 2:
                 _LOGGER.warning(

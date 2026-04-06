@@ -2,7 +2,6 @@
 
 import asyncio
 import logging
-import re
 
 from tplinkrouterc6u import LTEStatus, TplinkRouterProvider
 
@@ -158,7 +157,11 @@ class TPLinkRouter5GAPI:
             _, values = self.client.req_act(acts)
             return values
 
-        values = await asyncio.to_thread(fetch_all)
+        try:
+            values = await asyncio.to_thread(fetch_all)
+        except Exception as err:
+            _LOGGER.error("Error fetching technical status: %s", err)
+            return lte, {}
 
         lte_status = LTEStatus()
         extra = {}

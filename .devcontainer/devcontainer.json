@@ -2,7 +2,7 @@
   "name": "TP-Link Router Dev",
   "dockerComposeFile": "docker-compose.yml",
   "service": "homeassistant",
-  "workspaceFolder": "/workspaces/ha-tp-link-router-5g-monitor",
+  "workspaceFolder": "/workspaces/ha-tplink-router-5g-monitor",
   "_comment": "Added -U to ensure it upgrades if a cached version is old",
   "postCreateCommand": "sh .devcontainer/setup.sh",
   "mounts": [
@@ -25,7 +25,7 @@
       "settings": {
         "_comment": "This helps VS Code find your imports correctly",
         "python.analysis.extraPaths": [
-          "/workspaces/ha-TP-Link-router-5g-monitor/custom_components"
+          "/workspaces/ha-tplink-router-5g-monitor/custom_components"
         ],
         "yaml.schemas": {
           "https://raw.githubusercontent.com/hacs/default/master/hacs.json": "hacs.json",

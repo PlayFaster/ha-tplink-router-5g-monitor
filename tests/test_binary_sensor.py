@@ -34,6 +34,20 @@ def test_binary_sensor_is_on_best_connection(mock_coordinator, mock_config_entry
     assert sensor.is_on is False
 
 
+def test_binary_sensor_is_on_roaming(mock_coordinator, mock_config_entry):
+    """Test roaming binary sensor logic."""
+    description = next(d for d in BINARY_SENSORS if d.key == "roaming")
+    sensor = TPLinkRouterBinarySensor(mock_coordinator, mock_config_entry, description)
+
+    # 1. Active
+    mock_coordinator.data = {"extra_lte_status": {"roaming": "1"}}
+    assert sensor.is_on is True
+
+    # 2. Inactive
+    mock_coordinator.data = {"extra_lte_status": {"roaming": "0"}}
+    assert sensor.is_on is False
+
+
 def test_binary_sensor_is_on_endc(mock_coordinator, mock_config_entry):
     """Test ENDC binary sensor logic."""
     description = next(d for d in BINARY_SENSORS if d.key == "endc_support")

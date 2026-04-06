@@ -67,6 +67,77 @@ async def test_setup_entry_success(mock_hass, mock_config_entry):
 
 
 @pytest.mark.asyncio
+async def test_setup_entry_initial_fetch_failure(mock_hass, mock_config_entry):
+    """Test setup when initial fetch fails."""
+    mock_config_entry.options = {
+        "host": "192.168.253.1",
+        "password": "pass",
+    }
+
+    with (
+        patch("custom_components.tplink_router_5g.TPLinkRouter5GAPI"),
+        patch(
+            "custom_components.tplink_router_5g.coordinator.TPLinkRouterDataUpdateCoordinator.async_refresh",
+            side_effect=Exception("Fetch failed"),
+        ),
+        patch("homeassistant.helpers.frame._hass", mock_hass),
+    ):
+        # Should still return True as we do background setup
+        assert await async_setup_entry(mock_hass, mock_config_entry) is True
+
+
+@pytest.mark.asyncio
+async def test_send_sms_service(mock_hass, mock_config_entry):
+    """Test the send_sms service registration and call."""
+    mock_config_entry.options = {
+        "host": "192.168.253.1",
+        "password": "pass",
+    }
+
+    with (
+        patch("custom_components.tplink_router_5g.TPLinkRouter5GAPI") as mock_api_class,
+        patch("homeassistant.helpers.frame._hass", mock_hass),
+    ):
+        mock_api = mock_api_class.return_value
+        mock_api.send_sms = AsyncMock()
+
+        await async_setup_entry(mock_hass, mock_config_entry)
+
+        # Get the registered service
+        service_call = mock_hass.services.async_register.call_args_list[0]
+        _domain, service_name, func = service_call[0]
+        assert service_name == "send_sms"
+
+        # Call the service function
+        mock_call = MagicMock()
+        mock_call.data = {"number": "12345", "text": "hello"}
+        await func(mock_call)
+
+        mock_api.send_sms.assert_called_once_with("12345", "hello")
+
+
+@pytest.mark.asyncio
+async def test_send_sms_service_error(mock_hass, mock_config_entry):
+    """Test the send_sms service handling error."""
+    mock_config_entry.options = {
+        "host": "192.168.253.1",
+        "password": "pass",
+    }
+    with (
+        patch("custom_components.tplink_router_5g.TPLinkRouter5GAPI") as mock_api_class,
+        patch("homeassistant.helpers.frame._hass", mock_hass),
+    ):
+        mock_api = mock_api_class.return_value
+        mock_api.send_sms = AsyncMock(side_effect=Exception("SMS fail"))
+
+        await async_setup_entry(mock_hass, mock_config_entry)
+        _domain, _name, func = mock_hass.services.async_register.call_args[0]
+
+        # Should not raise exception
+        await func(MagicMock(data={}))
+
+
+@pytest.mark.asyncio
 async def test_unload_entry_success(mock_hass, mock_config_entry):
     """Test successful unloading of the integration."""
     mock_api = MagicMock()
