@@ -110,3 +110,8 @@ class TPLinkRouter5GAPI:
         """Reboot the router."""
         await self._ensure_client()
         await asyncio.to_thread(self.client.reboot)
+
+    async def set_wifi(self, wifi, enable):
+        """Enable or disable a wifi connection."""
+        await self._ensure_client()
+        await asyncio.to_thread(self.client.set_wifi, wifi, enable)

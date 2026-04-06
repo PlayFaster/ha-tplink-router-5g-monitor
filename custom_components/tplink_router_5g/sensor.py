@@ -17,6 +17,7 @@ from homeassistant.const import (
     UnitOfDataRate,
     UnitOfInformation,
     CONF_HOST,
+    EntityCategory,
 )
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
@@ -30,33 +31,40 @@ class TPLinkSensorEntityDescription(SensorEntityDescription):
     """Describes TP-Link sensor entity."""
     value_fn: Callable[[Any], Any]
     sensor_type: str = "status"
+    group: str = "main"
 
 SENSOR_TYPES: Final[tuple[TPLinkSensorEntityDescription, ...]] = (
-    TPLinkSensorEntityDescription(
-        key="clients_total",
-        name="Total clients",
-        icon="mdi:account-multiple",
-        state_class=SensorStateClass.TOTAL,
-        value_fn=lambda data: data["status"].clients_total,
-    ),
+    # --- Main Device: Diagnostics ---
     TPLinkSensorEntityDescription(
         key="cpu_used",
-        name="CPU used",
+        name="CPU Used",
         icon="mdi:cpu-64-bit",
         state_class=SensorStateClass.MEASUREMENT,
         native_unit_of_measurement=PERCENTAGE,
         suggested_display_precision=1,
+        entity_category=EntityCategory.DIAGNOSTIC,
         value_fn=lambda data: (data["status"].cpu_usage * 100) if data["status"].cpu_usage is not None else None,
     ),
     TPLinkSensorEntityDescription(
         key="memory_used",
-        name="Memory used",
+        name="Memory Used",
         icon="mdi:memory",
         state_class=SensorStateClass.MEASUREMENT,
         native_unit_of_measurement=PERCENTAGE,
         suggested_display_precision=1,
+        entity_category=EntityCategory.DIAGNOSTIC,
         value_fn=lambda data: (data["status"].mem_usage * 100) if data["status"].mem_usage is not None else None,
     ),
+    TPLinkSensorEntityDescription(
+        key="lte_isp_name",
+        name="ISP Name",
+        icon="mdi:sim-outline",
+        sensor_type="lte_status",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=lambda data: data["lte_status"].isp_name if data["lte_status"] else None,
+    ),
+    
+    # --- Main Device: Connection Metrics ---
     TPLinkSensorEntityDescription(
         key="lte_network_type",
         name="Network Type",
@@ -64,6 +72,8 @@ SENSOR_TYPES: Final[tuple[TPLinkSensorEntityDescription, ...]] = (
         sensor_type="lte_status",
         value_fn=lambda data: data["lte_status"].network_type_info if data["lte_status"] else None,
     ),
+
+    # --- Data Sub-device ---
     TPLinkSensorEntityDescription(
         key="lte_total_statistics",
         name="Total Data Statistics",
@@ -72,6 +82,7 @@ SENSOR_TYPES: Final[tuple[TPLinkSensorEntityDescription, ...]] = (
         native_unit_of_measurement=UnitOfInformation.BYTES,
         device_class=SensorDeviceClass.DATA_SIZE,
         sensor_type="lte_status",
+        group="data",
         value_fn=lambda data: data["lte_status"].total_statistics if data["lte_status"] else None,
     ),
     TPLinkSensorEntityDescription(
@@ -81,6 +92,7 @@ SENSOR_TYPES: Final[tuple[TPLinkSensorEntityDescription, ...]] = (
         state_class=SensorStateClass.MEASUREMENT,
         native_unit_of_measurement=UnitOfDataRate.BYTES_PER_SECOND,
         sensor_type="lte_status",
+        group="data",
         value_fn=lambda data: data["lte_status"].cur_rx_speed if data["lte_status"] else None,
     ),
     TPLinkSensorEntityDescription(
@@ -90,11 +102,50 @@ SENSOR_TYPES: Final[tuple[TPLinkSensorEntityDescription, ...]] = (
         state_class=SensorStateClass.MEASUREMENT,
         native_unit_of_measurement=UnitOfDataRate.BYTES_PER_SECOND,
         sensor_type="lte_status",
+        group="data",
         value_fn=lambda data: data["lte_status"].cur_tx_speed if data["lte_status"] else None,
+    ),
+
+    # --- SMS Sub-device ---
+    TPLinkSensorEntityDescription(
+        key="lte_sms_unread_count",
+        name="Unread SMS",
+        icon="mdi:email-outline",
+        state_class=SensorStateClass.TOTAL,
+        sensor_type="lte_status",
+        group="sms",
+        value_fn=lambda data: data["lte_status"].sms_unread_count if data["lte_status"] else None,
+    ),
+
+    # --- Clients Sub-device ---
+    TPLinkSensorEntityDescription(
+        key="clients_total",
+        name="Total Clients",
+        icon="mdi:account-multiple",
+        state_class=SensorStateClass.TOTAL,
+        group="clients",
+        value_fn=lambda data: data["status"].clients_total,
+    ),
+    TPLinkSensorEntityDescription(
+        key="wifi_clients_total",
+        name="Total Main Wi-Fi Clients",
+        icon="mdi:wifi",
+        state_class=SensorStateClass.TOTAL,
+        group="clients",
+        value_fn=lambda data: data["status"].wifi_clients_total,
+    ),
+    TPLinkSensorEntityDescription(
+        key="wired_clients_total",
+        name="Total Wired Clients",
+        icon="mdi:lan-connect",
+        state_class=SensorStateClass.TOTAL,
+        group="clients",
+        value_fn=lambda data: data["status"].wired_total,
     ),
 )
 
 EXTRA_LTE_SENSOR_TYPES: Final[tuple[TPLinkSensorEntityDescription, ...]] = (
+    # --- Main Device: 5G Metrics ---
     TPLinkSensorEntityDescription(
         key="nr_rsrp",
         name="5G RSRP",
@@ -192,17 +243,33 @@ class TPLinkRouterSensor(CoordinatorEntity[TPLinkRouterDataUpdateCoordinator], S
         """Return the value of the sensor."""
         if not self.coordinator.data:
             return None
-        return self.entity_description.value_fn(self.coordinator.data)
+        try:
+            return self.entity_description.value_fn(self.coordinator.data)
+        except (KeyError, AttributeError):
+            return None
 
     @property
     def device_info(self):
-        """Return device information."""
+        """Return device information with sub-device support."""
         host = self._entry.options[CONF_HOST]
+        group = self.entity_description.group
+        
+        if group == "main":
+            return {
+                "identifiers": {(DOMAIN, host)},
+                "name": self._entry.title,
+                "manufacturer": "TP-Link",
+                "model": self.coordinator.firmware.model if self.coordinator.firmware else "5G Router",
+                "sw_version": self.coordinator.firmware.firmware_version if self.coordinator.firmware else None,
+                "hw_version": self.coordinator.firmware.hardware_version if self.coordinator.firmware else None,
+                "configuration_url": f"http://{host}",
+            }
+            
+        # Sub-device naming logic
+        sub_name = f"{self._entry.title} {group.capitalize()}"
         return {
-            "identifiers": {(DOMAIN, host)},
-            "name": self._entry.title,
+            "identifiers": {(DOMAIN, f"{host}_{group}")},
+            "name": sub_name,
             "manufacturer": "TP-Link",
-            "model": self.coordinator.firmware.model if self.coordinator.firmware else "5G Router",
-            "sw_version": self.coordinator.firmware.firmware_version if self.coordinator.firmware else None,
-            "hw_version": self.coordinator.firmware.hardware_version if self.coordinator.firmware else None,
+            "via_device": (DOMAIN, host),
         }

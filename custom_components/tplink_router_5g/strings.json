@@ -38,12 +38,16 @@
   "entity": {
     "sensor": {
       "clients_total": { "name": "Total Clients" },
+      "wifi_clients_total": { "name": "Total Main Wi-Fi Clients" },
+      "wired_clients_total": { "name": "Total Wired Clients" },
       "cpu_used": { "name": "CPU Used" },
       "memory_used": { "name": "Memory Used" },
+      "lte_isp_name": { "name": "ISP Name" },
       "lte_network_type": { "name": "Network Type" },
       "lte_total_statistics": { "name": "Total Data Statistics" },
       "lte_cur_rx_speed": { "name": "Download Speed" },
       "lte_cur_tx_speed": { "name": "Upload Speed" },
+      "lte_sms_unread_count": { "name": "Unread SMS" },
       "nr_rsrp": { "name": "5G RSRP" },
       "nr_rsrq": { "name": "5G RSRQ" },
       "nr_snr": { "name": "5G SNR" },
@@ -57,7 +61,16 @@
       "reboot": { "name": "Reboot" }
     },
     "switch": {
-      "pause_polling": { "name": "Pause Polling" }
+      "pause_polling": { "name": "Pause Polling" },
+      "wifi_24g": { "name": "Wi-Fi 2.4G" },
+      "wifi_5g": { "name": "Wi-Fi 5G" },
+      "wifi_6g": { "name": "Wi-Fi 6G" },
+      "wifi_guest_24g": { "name": "Guest Wi-Fi 2.4G" },
+      "wifi_guest_5g": { "name": "Guest Wi-Fi 5G" },
+      "wifi_guest_6g": { "name": "Guest Wi-Fi 6G" },
+      "iot_24g": { "name": "IoT Wi-Fi 2.4G" },
+      "iot_5g": { "name": "IoT Wi-Fi 5G" },
+      "iot_6g": { "name": "IoT Wi-Fi 6G" }
     },
     "number": {
       "polling_interval": { "name": "Polling Interval" }
