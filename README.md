@@ -28,10 +28,10 @@ Home Assistant integration for TP-Link NX510v 5G Router that provides detailed s
 ## Supported Models
 
 - **TP-Link NX510v** – TP-Link Aginet AX3000 5G Indoor Router with WiFi 6
- 
+
 *May work with other TP-Link 5G devices, but has only been tested with NX510v.*
 
-## ✅ Features 
+## ✅ Features
 
 ### Core Monitoring
 
@@ -83,7 +83,6 @@ Organized into logical devices: **Main Router**, **Data Usage**, **Wi-Fi Control
 ## ❔ Whats Missing?
 
 - SMS Management: The integration has a sensor for unread SMS, but to read SMS or manage the Router SMS Inbox you must use the device GUI.
-
 
 ## 📸 Screenshots
 

@@ -194,13 +194,15 @@ class TPLinkRouter5GAPI:
                     extra["roaming"] = values[0].get("roamingStatus")
                     extra["endc_support"] = values[0].get("endcStatus")
                 if len(values) > 1 and values[1]:
-                    limit = _safe_int(values[1].get("limitation"))
-                    usage = _safe_int(values[1].get("dailyFlow"))
-                    extra["daily_usage"] = usage
+                    v1 = values[1]
+                    limit = _safe_int(v1.get("limitation"))
+                    daily_usage = _safe_int(v1.get("dailyFlow"))
+                    total_usage = _safe_int(v1.get("totalStatistics"))
+                    extra["daily_usage"] = daily_usage
                     extra["usage_limit"] = limit
-                    extra["payment_day"] = values[1].get("paymentDay")
+                    extra["payment_day"] = v1.get("paymentDay")
                     if limit > 0:
-                        extra["data_left"] = max(0, limit - usage)
+                        extra["data_left"] = max(0, limit - total_usage)
                 if len(values) > 2 and values[2]:
                     res_code = _safe_int(values[2].get("smsSendResult"), 3)
                     sms_result_map = {0: "Success", 1: "Fail", 2: "Sending", 3: "Idle"}
