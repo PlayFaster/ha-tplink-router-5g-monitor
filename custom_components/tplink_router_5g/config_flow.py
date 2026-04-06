@@ -75,6 +75,7 @@ class TPLinkRouter5GConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     @staticmethod
     @config_entries.callback
     def async_get_options_flow(entry):
+        """Return the options flow."""
         return TPLinkRouter5GOptionsFlow(entry)
 
 
@@ -82,9 +83,11 @@ class TPLinkRouter5GOptionsFlow(config_entries.OptionsFlow):
     """Handle options flow."""
 
     def __init__(self, entry):
+        """Initialize options flow."""
         self._entry = entry
 
     async def async_step_init(self, user_input=None):
+        """Manage the options."""
         errors = {}
         if user_input is not None:
             try:

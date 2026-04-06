@@ -1,12 +1,11 @@
 """Tests for the TP-Link Router config flow."""
 
 from unittest.mock import AsyncMock, MagicMock, patch
-import asyncio
+
 import pytest
 from homeassistant.const import CONF_HOST, CONF_PASSWORD, CONF_USERNAME
-from homeassistant.data_entry_flow import AbortFlow, FlowResultType
+from homeassistant.data_entry_flow import FlowResultType
 
-from custom_components.tplink_router_5g.api import TPLinkRouter5GAPI
 from custom_components.tplink_router_5g.config_flow import (
     TPLinkRouter5GConfigFlow,
     TPLinkRouter5GOptionsFlow,
@@ -21,7 +20,9 @@ async def test_validate_credentials_success():
     hass = MagicMock()
     user_input = {CONF_HOST: "192.168.253.1", CONF_PASSWORD: "pass"}
 
-    with patch("custom_components.tplink_router_5g.config_flow.TPLinkRouter5GAPI") as mock_api_class:
+    with patch(
+        "custom_components.tplink_router_5g.config_flow.TPLinkRouter5GAPI"
+    ) as mock_api_class:
         mock_api = mock_api_class.return_value
         mock_api.login = AsyncMock()
 
@@ -65,7 +66,9 @@ async def test_config_flow_user_step_errors():
         "custom_components.tplink_router_5g.config_flow._validate_credentials",
         side_effect=Exception("Unknown"),
     ):
-        result = await flow.async_step_user({CONF_HOST: "192.168.253.1", CONF_PASSWORD: "p"})
+        result = await flow.async_step_user(
+            {CONF_HOST: "192.168.253.1", CONF_PASSWORD: "p"}
+        )
         assert result["errors"] == {"base": "cannot_connect"}
 
 
@@ -109,5 +112,7 @@ async def test_options_flow_errors():
         "custom_components.tplink_router_5g.config_flow._validate_credentials",
         side_effect=Exception,
     ):
-        result = await flow.async_step_init({CONF_HOST: "192.168.253.1", CONF_PASSWORD: "p"})
+        result = await flow.async_step_init(
+            {CONF_HOST: "192.168.253.1", CONF_PASSWORD: "p"}
+        )
         assert result["errors"] == {"base": "cannot_connect"}

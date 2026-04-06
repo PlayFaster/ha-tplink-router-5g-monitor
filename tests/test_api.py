@@ -1,13 +1,13 @@
 """Tests for TP-Link Router 5G API."""
 
 from unittest.mock import MagicMock, patch
-import asyncio
+
 import pytest
 
 from custom_components.tplink_router_5g.api import (
     TPLinkRouter5GAPI,
-    _safe_int,
     _parse_uptime_to_seconds,
+    _safe_int,
 )
 
 
@@ -32,8 +32,10 @@ def test_api_parse_uptime():
 async def test_api_get_firmware():
     """Test firmware fetching."""
     api = TPLinkRouter5GAPI("192.168.253.1", "admin", "password")
-    
-    with patch("custom_components.tplink_router_5g.api.TplinkRouterProvider.get_client") as mock_client:
+
+    with patch(
+        "custom_components.tplink_router_5g.api.TplinkRouterProvider.get_client"
+    ) as mock_client:
         mock_client.return_value.get_firmware = MagicMock(return_value="v1.0")
         assert await api.get_firmware() == "v1.0"
 
@@ -42,22 +44,27 @@ async def test_api_get_firmware():
 async def test_api_send_sms():
     """Test sending SMS."""
     api = TPLinkRouter5GAPI("192.168.253.1", "admin", "password")
-    
-    with patch("custom_components.tplink_router_5g.api.TplinkRouterProvider.get_client") as mock_client:
+
+    with patch(
+        "custom_components.tplink_router_5g.api.TplinkRouterProvider.get_client"
+    ) as mock_client:
         client_instance = mock_client.return_value
         client_instance.send_sms = MagicMock()
-        
+
         await api.send_sms("12345", "test")
         client_instance.send_sms.assert_called_once_with("12345", "test")
+
 
 @pytest.mark.asyncio
 async def test_api_reboot():
     """Test rebooting."""
     api = TPLinkRouter5GAPI("192.168.253.1", "admin", "password")
-    
-    with patch("custom_components.tplink_router_5g.api.TplinkRouterProvider.get_client") as mock_client:
+
+    with patch(
+        "custom_components.tplink_router_5g.api.TplinkRouterProvider.get_client"
+    ) as mock_client:
         client_instance = mock_client.return_value
         client_instance.reboot = MagicMock()
-        
+
         await api.reboot()
         client_instance.reboot.assert_called_once()

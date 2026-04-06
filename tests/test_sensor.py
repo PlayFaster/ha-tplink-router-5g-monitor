@@ -6,8 +6,8 @@ import pytest
 
 from custom_components.tplink_router_5g.const import DOMAIN
 from custom_components.tplink_router_5g.sensor import (
-    SENSOR_TYPES,
     EXTRA_LTE_SENSOR_TYPES,
+    SENSOR_TYPES,
     TPLinkRouterSensor,
     async_setup_entry,
 )
@@ -21,6 +21,7 @@ def test_sensor_native_value(mock_coordinator, mock_config_entry):
 
     assert sensor.native_value == 50.0
 
+
 def test_sensor_lte_extra_value(mock_coordinator, mock_config_entry):
     """Test extra LTE sensor extraction."""
     mock_coordinator.data = {"extra_lte_status": {"nr_rsrp": -80}}
@@ -29,8 +30,10 @@ def test_sensor_lte_extra_value(mock_coordinator, mock_config_entry):
 
     assert sensor.native_value == -80
 
+
 def test_sensor_device_info(mock_coordinator, mock_config_entry):
     """Test device_info for main and sub devices."""
+    mock_coordinator.mac = None  # Force host fallback
     description = next(d for d in SENSOR_TYPES if d.key == "cpu_used")
     sensor = TPLinkRouterSensor(mock_coordinator, mock_config_entry, description)
     info = sensor.device_info
@@ -38,7 +41,9 @@ def test_sensor_device_info(mock_coordinator, mock_config_entry):
     assert info["manufacturer"] == "TP-Link"
 
     description_data = next(d for d in SENSOR_TYPES if d.key == "daily_usage")
-    sensor_data = TPLinkRouterSensor(mock_coordinator, mock_config_entry, description_data)
+    sensor_data = TPLinkRouterSensor(
+        mock_coordinator, mock_config_entry, description_data
+    )
     info_data = sensor_data.device_info
     assert info_data["identifiers"] == {(DOMAIN, "host_192.168.253.1_data")}
 

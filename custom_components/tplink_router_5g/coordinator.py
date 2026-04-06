@@ -20,15 +20,22 @@ try:
 except ImportError:
     import async_timeout
 
-    class asyncio_timeout:
+    class AsyncioTimeout:
+        """Asyncio timeout context manager fallback."""
+
         def __init__(self, delay):
+            """Initialize timeout."""
             self._timeout = async_timeout.timeout(delay)
 
         async def __aenter__(self):
+            """Enter context."""
             return await self._timeout.__aenter__()
 
         async def __aexit__(self, *args):
+            """Exit context."""
             return await self._timeout.__aexit__(*args)
+
+    asyncio_timeout = AsyncioTimeout
 
 
 class TPLinkRouterDataUpdateCoordinator(DataUpdateCoordinator):
@@ -101,7 +108,7 @@ class TPLinkRouterDataUpdateCoordinator(DataUpdateCoordinator):
                 self.consecutive_failures = 0
                 return data
 
-        except TimeoutError:
+        except TimeoutError as err:
             self.consecutive_failures += 1
             if self.data is not None and self.consecutive_failures <= 2:
                 _LOGGER.warning(
@@ -109,7 +116,7 @@ class TPLinkRouterDataUpdateCoordinator(DataUpdateCoordinator):
                 )
                 return self.data
             _LOGGER.error("%s: API request timed out", self.entry.title)
-            raise UpdateFailed("API request timed out")
+            raise UpdateFailed("API request timed out") from err
         except Exception as err:
             self.consecutive_failures += 1
             if self.data is not None and self.consecutive_failures <= 2:
@@ -121,7 +128,7 @@ class TPLinkRouterDataUpdateCoordinator(DataUpdateCoordinator):
                 return self.data
 
             _LOGGER.error("%s: Connection lost: %s", self.entry.title, err)
-            raise UpdateFailed(f"Communication error: {err}")
+            raise UpdateFailed(f"Communication error: {err}") from err
         finally:
             # Session End - Improved error handling
             try:

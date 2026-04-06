@@ -16,9 +16,9 @@ from custom_components.tplink_router_5g.const import DOMAIN
 async def test_reboot_button_press(mock_coordinator, mock_config_entry):
     """Test reboot button trigger."""
     description = next(d for d in BUTTON_TYPES if d.key == "reboot")
-    button = TPLinkRebootButton(
-        mock_coordinator, mock_config_entry, description
-    )
+    # Ensure API method is AsyncMock
+    mock_coordinator.api.reboot = AsyncMock()
+    button = TPLinkRebootButton(mock_coordinator, mock_config_entry, description)
 
     await button.async_press()
     mock_coordinator.api.reboot.assert_called_once()
@@ -26,10 +26,9 @@ async def test_reboot_button_press(mock_coordinator, mock_config_entry):
 
 def test_button_device_info(mock_coordinator, mock_config_entry):
     """Test device_info for router group."""
+    mock_coordinator.mac = None  # Force host fallback
     description = next(d for d in BUTTON_TYPES if d.key == "reboot")
-    button = TPLinkRebootButton(
-        mock_coordinator, mock_config_entry, description
-    )
+    button = TPLinkRebootButton(mock_coordinator, mock_config_entry, description)
 
     assert button.device_info["identifiers"] == {(DOMAIN, "host_192.168.253.1")}
 

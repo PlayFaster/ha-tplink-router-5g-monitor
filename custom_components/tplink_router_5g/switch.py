@@ -6,7 +6,6 @@ from typing import Any, Final
 
 from homeassistant.components.switch import SwitchEntity, SwitchEntityDescription
 from homeassistant.const import CONF_HOST
-from homeassistant.helpers.device_registry import CONNECTION_NETWORK_MAC
 from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
@@ -126,7 +125,9 @@ class TPLinkWifiSwitch(
         if not self.coordinator.data or not self.coordinator.data.get("status"):
             return False
         return getattr(
-            self.coordinator.data["status"], self.entity_description.property_name, False
+            self.coordinator.data["status"],
+            self.entity_description.property_name,
+            False,
         )
 
     async def async_turn_on(self, **kwargs: Any) -> None:

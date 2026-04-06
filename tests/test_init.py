@@ -3,7 +3,6 @@
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-from homeassistant.helpers.update_coordinator import UpdateFailed
 
 from custom_components.tplink_router_5g import async_setup_entry, async_unload_entry
 from custom_components.tplink_router_5g.const import (
@@ -11,7 +10,17 @@ from custom_components.tplink_router_5g.const import (
     CONF_STOP_POLLING,
     DOMAIN,
 )
-from custom_components.tplink_router_5g.coordinator import TPLinkRouterDataUpdateCoordinator
+from custom_components.tplink_router_5g.coordinator import (
+    TPLinkRouterDataUpdateCoordinator,
+)
+
+
+@pytest.fixture(autouse=True)
+def mock_report_usage():
+    """Mock report_usage to avoid 'Frame helper not set up' error."""
+    with patch("homeassistant.helpers.frame.report_usage"):
+        yield
+
 
 @pytest.fixture
 def mock_hass():
@@ -44,6 +53,7 @@ async def test_setup_entry_success(mock_hass, mock_config_entry):
 
     with (
         patch("custom_components.tplink_router_5g.TPLinkRouter5GAPI"),
+        patch("homeassistant.helpers.frame._hass", mock_hass),
     ):
         assert await async_setup_entry(mock_hass, mock_config_entry) is True
 
@@ -66,4 +76,4 @@ async def test_unload_entry_success(mock_hass, mock_config_entry):
     mock_hass.data = {DOMAIN: {"test_entry": mock_coordinator}}
 
     assert await async_unload_entry(mock_hass, mock_config_entry) is True
-    assert DOMAIN not in mock_hass.data
+    assert mock_hass.data[DOMAIN] == {}

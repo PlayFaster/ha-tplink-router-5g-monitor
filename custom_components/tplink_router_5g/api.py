@@ -1,9 +1,10 @@
 """TP-Link Router 5G API client."""
 
-import logging
 import asyncio
+import logging
 import re
-from tplinkrouterc6u import TplinkRouterProvider, LTEStatus
+
+from tplinkrouterc6u import LTEStatus, TplinkRouterProvider
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -120,9 +121,7 @@ class TPLinkRouter5GAPI:
         """Fetch all LTE/5G and extra metrics in a single session."""
         await self._ensure_client()
         lte = None
-        if not hasattr(self.client, "req_act") or not hasattr(
-            self.client, "ActItem"
-        ):
+        if not hasattr(self.client, "req_act") or not hasattr(self.client, "ActItem"):
             if hasattr(self.client, "get_lte_status"):
                 lte = await asyncio.to_thread(self.client.get_lte_status)
             return lte, {}
