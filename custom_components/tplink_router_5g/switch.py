@@ -170,12 +170,12 @@ class TPLinkPausePollingSwitch(CoordinatorEntity[TPLinkRouterDataUpdateCoordinat
         host = self._entry.options[CONF_HOST]
         group = self.entity_description.group
         
+        main_identifiers = {(DOMAIN, self.coordinator.mac)} if self.coordinator.mac else {(DOMAIN, host)}
+        
         if group == "main":
-            # Main device uses MAC as identifier and connection if available
-            identifiers = {(DOMAIN, self.coordinator.mac)} if self.coordinator.mac else {(DOMAIN, host)}
             connections = {(CONNECTION_NETWORK_MAC, self.coordinator.mac)} if self.coordinator.mac else set()
             return {
-                "identifiers": identifiers,
+                "identifiers": main_identifiers,
                 "connections": connections,
                 "name": self._entry.title,
                 "manufacturer": "TP-Link",
@@ -232,9 +232,12 @@ class TPLinkWifiSwitch(CoordinatorEntity[TPLinkRouterDataUpdateCoordinator], Swi
     def device_info(self):
         """Return device information for Wi-Fi sub-device."""
         host = self._entry.options[CONF_HOST]
+        main_identifiers = {(DOMAIN, self.coordinator.mac)} if self.coordinator.mac else {(DOMAIN, host)}
+        sub_id_prefix = self.coordinator.mac if self.coordinator.mac else host
+        
         return {
-            "identifiers": {(DOMAIN, f"{host}_wifi")},
+            "identifiers": {(DOMAIN, f"{sub_id_prefix}_wifi")},
             "name": f"{self._entry.title} Wi-Fi",
             "manufacturer": "TP-Link",
-            "via_device": (DOMAIN, host),
+            "via_device": list(main_identifiers)[0],
         }

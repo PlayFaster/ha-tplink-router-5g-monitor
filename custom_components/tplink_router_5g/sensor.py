@@ -66,7 +66,7 @@ SENSOR_TYPES: Final[tuple[TPLinkSensorEntityDescription, ...]] = (
     ),
     TPLinkSensorEntityDescription(
         key="sim_status_info",
-        name="SIM Status Info",
+        name="SIM Status",
         icon="mdi:sim-outline",
         sensor_type="lte_status",
         entity_category=EntityCategory.DIAGNOSTIC,
@@ -120,6 +120,18 @@ SENSOR_TYPES: Final[tuple[TPLinkSensorEntityDescription, ...]] = (
     ),
     
     # --- Main Device: Connection Metrics ---
+    TPLinkSensorEntityDescription(
+        key="lte_connection_status",
+        name="Connection Status",
+        icon="mdi:signal-variant",
+        sensor_type="lte_status",
+        value_fn=lambda data: {
+            0: "Disconnected",
+            1: "Connecting",
+            2: "Connected",
+            3: "Disconnecting",
+        }.get(data["lte_status"].connect_status, f"Unknown ({data['lte_status'].connect_status})") if data["lte_status"] else None,
+    ),
     TPLinkSensorEntityDescription(
         key="lte_network_type",
         name="Network Type",
@@ -478,12 +490,12 @@ class TPLinkRouterSensor(CoordinatorEntity[TPLinkRouterDataUpdateCoordinator], S
         host = self._entry.options[CONF_HOST]
         group = self.entity_description.group
         
+        main_identifiers = {(DOMAIN, self.coordinator.mac)} if self.coordinator.mac else {(DOMAIN, host)}
+        
         if group == "main":
-            # Main device uses MAC as identifier and connection if available
-            identifiers = {(DOMAIN, self.coordinator.mac)} if self.coordinator.mac else {(DOMAIN, host)}
             connections = {(CONNECTION_NETWORK_MAC, self.coordinator.mac)} if self.coordinator.mac else set()
             return {
-                "identifiers": identifiers,
+                "identifiers": main_identifiers,
                 "connections": connections,
                 "name": self._entry.title,
                 "manufacturer": "TP-Link",
@@ -502,9 +514,13 @@ class TPLinkRouterSensor(CoordinatorEntity[TPLinkRouterDataUpdateCoordinator], S
         }
         display_group = group_names.get(group, group.capitalize())
         sub_name = f"{self._entry.title} {display_group}"
+        
+        # Consistent sub-device identifier using host/mac as prefix
+        sub_id_prefix = self.coordinator.mac if self.coordinator.mac else host
+        
         return {
-            "identifiers": {(DOMAIN, f"{host}_{group}")},
+            "identifiers": {(DOMAIN, f"{sub_id_prefix}_{group}")},
             "name": sub_name,
             "manufacturer": "TP-Link",
-            "via_device": (DOMAIN, host),
+            "via_device": list(main_identifiers)[0],
         }

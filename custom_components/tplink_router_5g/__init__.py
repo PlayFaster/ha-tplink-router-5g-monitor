@@ -32,9 +32,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     # Fetch initial data so device_info is populated before entities are added
     try:
-        await api.login()
         await coordinator.async_refresh()
-        await api.logout()
     except Exception as err:
         _LOGGER.warning("%s: Initial data fetch failed: %s", entry.title, err)
 
