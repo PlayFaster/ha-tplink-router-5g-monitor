@@ -153,6 +153,13 @@ class TPLinkRouter5GAPI:
                     "0,0,0,0,0,0",
                     attrs=[],
                 ),
+                # 5: WAN Status (for MBB Uptime)
+                act_item(
+                    act_item.GL,
+                    "DEV2_ADT_WAN",
+                    "0,0,0,0,0,0",
+                    attrs=["X_TP_Uptime", "name"],
+                ),
             ]
             _, values = self.client.req_act(acts)
             return values
@@ -302,6 +309,12 @@ class TPLinkRouter5GAPI:
                                 extra[f"{prefix}cgi"] = v
                             elif k == "signalStrength":
                                 extra[f"{prefix}signal_pct"] = _safe_int(v) * 25
+
+                if len(values) > 5 and isinstance(values[5], list):
+                    for wan in values[5]:
+                        if wan.get("name") == "MBB":
+                            extra["wan_uptime"] = _safe_int(wan.get("X_TP_Uptime"))
+                            break
 
             except (KeyError, IndexError, TypeError, ValueError, AttributeError) as err:
                 _LOGGER.error("Error parsing technical status: %s", err)

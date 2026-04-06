@@ -3,6 +3,7 @@
 import logging
 from collections.abc import Callable
 from dataclasses import dataclass
+from datetime import timedelta
 from typing import Any, Final
 
 from homeassistant.components.sensor import (
@@ -24,6 +25,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.device_registry import CONNECTION_NETWORK_MAC
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
+from homeassistant.util import dt as dt_util
 
 from .const import DOMAIN
 from .coordinator import TPLinkRouterDataUpdateCoordinator
@@ -110,6 +112,15 @@ SENSOR_TYPES: Final[tuple[TPLinkSensorEntityDescription, ...]] = (
         icon="mdi:router-network",
         entity_category=EntityCategory.DIAGNOSTIC,
         value_fn=lambda data: data["status"].wan_ipv4_gateway,
+    ),
+    TPLinkSensorEntityDescription(
+        key="wan_uptime",
+        name="WAN Uptime",
+        icon="mdi:clock-start",
+        device_class=SensorDeviceClass.TIMESTAMP,
+        sensor_type="extra_lte_status",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=lambda data: data["extra_lte_status"].get("wan_uptime"),
     ),
     TPLinkSensorEntityDescription(
         key="primary_dns",
@@ -794,6 +805,17 @@ class TPLinkRouterSensor(
         # Special case: Last Updated
         if key == "last_updated":
             return self.coordinator.last_update_success_time
+
+        # Special case: Stable Timestamp for Uptime
+        if key == "wan_uptime":
+            try:
+                uptime_seconds = self.entity_description.value_fn(self.coordinator.data)
+                if uptime_seconds is not None:
+                    seconds = int(float(uptime_seconds))
+                    boot_time = dt_util.now() - timedelta(seconds=seconds)
+                    return boot_time.replace(second=0, microsecond=0)
+            except (ValueError, TypeError):
+                return None
 
         try:
             return self.entity_description.value_fn(self.coordinator.data)
