@@ -1,56 +1,60 @@
 """Binary sensor platform for TP-Link Router 5G."""
 
 from dataclasses import dataclass
-from collections.abc import Callable
-from typing import Any, Final
+from typing import Final
+import logging
 
 from homeassistant.components.binary_sensor import (
     BinarySensorEntity,
     BinarySensorEntityDescription,
     BinarySensorDeviceClass,
 )
-from homeassistant.const import CONF_HOST, EntityCategory
+from homeassistant.const import (
+    CONF_HOST,
+)
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
-from homeassistant.helpers.device_registry import CONNECTION_NETWORK_MAC
 
 from .const import DOMAIN
 from .coordinator import TPLinkRouterDataUpdateCoordinator
 
+_LOGGER = logging.getLogger(__name__)
+
 @dataclass(frozen=True, kw_only=True)
 class TPLinkBinarySensorEntityDescription(BinarySensorEntityDescription):
     """Describes TP-Link binary sensor entity."""
-    value_fn: Callable[[Any], bool]
+    group: str = "main"
 
 BINARY_SENSORS: Final[tuple[TPLinkBinarySensorEntityDescription, ...]] = (
     TPLinkBinarySensorEntityDescription(
-        key="roaming",
-        name="Roaming Status",
+        key="best_connection",
+        name="Best Connection",
+        icon="mdi:star-check",
         device_class=BinarySensorDeviceClass.CONNECTIVITY,
-        entity_category=EntityCategory.DIAGNOSTIC,
-        value_fn=lambda data: data["extra_lte_status"].get("roaming") == "1",
+        group="main",
     ),
     TPLinkBinarySensorEntityDescription(
         key="endc_support",
         name="5G ENDC Support",
-        icon="mdi:signal-5g",
-        entity_category=EntityCategory.DIAGNOSTIC,
-        value_fn=lambda data: data["extra_lte_status"].get("endc_support") == "1",
+        icon="mdi:css3",
+        group="main",
     ),
     TPLinkBinarySensorEntityDescription(
-        key="best_connection",
-        name="Best Connection",
-        device_class=BinarySensorDeviceClass.CONNECTIVITY,
-        value_fn=lambda data: (
-            data["extra_lte_status"].get("endc_support") == "1" and
-            data["extra_lte_status"].get("nr_dl_mod") == "256QAM"
-        ),
+        key="roaming",
+        name="Roaming Status",
+        icon="mdi:airplane",
+        group="main",
     ),
 )
 
 async def async_setup_entry(hass, entry, async_add_entities):
     """Set up the binary sensor platform."""
     coordinator: TPLinkRouterDataUpdateCoordinator = hass.data[DOMAIN][entry.entry_id]
-    async_add_entities([TPLinkRouterBinarySensor(coordinator, entry, description) for description in BINARY_SENSORS])
+    
+    entities = []
+    for description in BINARY_SENSORS:
+        entities.append(TPLinkRouterBinarySensor(coordinator, entry, description))
+        
+    async_add_entities(entities)
 
 class TPLinkRouterBinarySensor(CoordinatorEntity[TPLinkRouterDataUpdateCoordinator], BinarySensorEntity):
     """Representation of a TP-Link Router binary sensor."""
@@ -70,22 +74,34 @@ class TPLinkRouterBinarySensor(CoordinatorEntity[TPLinkRouterDataUpdateCoordinat
         """Return true if the binary sensor is on."""
         if not self.coordinator.data:
             return False
-        return self.entity_description.value_fn(self.coordinator.data)
+            
+        key = self.entity_description.key
+        extra = self.coordinator.data.get("extra_lte_status", {})
+        
+        if key == "best_connection":
+            # Best connection: 5G ENDC is supported AND NR DL Modulation is 256QAM
+            endc = extra.get("endc_support") == "1"
+            dl_mod = extra.get("nr_dl_mod") == "256QAM"
+            return endc and dl_mod
+            
+        if key == "endc_support":
+            return extra.get("endc_support") == "1"
+            
+        if key == "roaming":
+            return extra.get("roaming") == "1"
+            
+        return False
 
     @property
     def device_info(self):
-        """Return device information."""
+        """Return device information linking to the main router device."""
         host = self._entry.options[CONF_HOST]
-        main_identifiers = {(DOMAIN, self.coordinator.mac)} if self.coordinator.mac else {(DOMAIN, host)}
-        connections = {(CONNECTION_NETWORK_MAC, self.coordinator.mac)} if self.coordinator.mac else set()
+        main_identifiers = {(DOMAIN, self.coordinator.mac)} if self.coordinator.mac else {(DOMAIN, f"host_{host}")}
         
         return {
             "identifiers": main_identifiers,
-            "connections": connections,
             "name": self._entry.title,
             "manufacturer": "TP-Link",
-            "model": self.coordinator.firmware.model if self.coordinator.firmware else "NX510v",
-            "sw_version": self.coordinator.firmware.firmware_version if self.coordinator.firmware else None,
-            "hw_version": self.coordinator.firmware.hardware_version if self.coordinator.firmware else None,
+            "model": self.coordinator.firmware.model if self.coordinator.firmware else "TP-Link Router",
             "configuration_url": f"http://{host}",
         }

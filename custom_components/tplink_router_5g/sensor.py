@@ -771,7 +771,11 @@ class TPLinkRouterSensor(CoordinatorEntity[TPLinkRouterDataUpdateCoordinator], S
                 if seconds <= 0: return None
                 boot_time = dt_util.now() - timedelta(seconds=seconds)
                 return boot_time.replace(second=0, microsecond=0)
-            except:
+            except (TypeError, ValueError) as err:
+                _LOGGER.debug("Failed to convert uptime to seconds: %s", err)
+                return None
+            except Exception as err:
+                _LOGGER.error("Unexpected error calculating uptime: %s", err)
                 return None
 
         try:
@@ -785,7 +789,7 @@ class TPLinkRouterSensor(CoordinatorEntity[TPLinkRouterDataUpdateCoordinator], S
         host = self._entry.options[CONF_HOST]
         group = self.entity_description.group
         
-        main_identifiers = {(DOMAIN, self.coordinator.mac)} if self.coordinator.mac else {(DOMAIN, host)}
+        main_identifiers = {(DOMAIN, self.coordinator.mac)} if self.coordinator.mac else {(DOMAIN, f"host_{host}")}
         
         if group == "main":
             connections = {(CONNECTION_NETWORK_MAC, self.coordinator.mac)} if self.coordinator.mac else set()
@@ -794,28 +798,23 @@ class TPLinkRouterSensor(CoordinatorEntity[TPLinkRouterDataUpdateCoordinator], S
                 "connections": connections,
                 "name": self._entry.title,
                 "manufacturer": "TP-Link",
-                "model": self.coordinator.firmware.model if self.coordinator.firmware else "NX510v",
+                "model": self.coordinator.firmware.model if self.coordinator.firmware else "TP-Link Router",
                 "sw_version": self.coordinator.firmware.firmware_version if self.coordinator.firmware else None,
                 "hw_version": self.coordinator.firmware.hardware_version if self.coordinator.firmware else None,
                 "configuration_url": f"http://{host}",
             }
             
-        # Sub-device naming logic
-        group_names = {
-            "sms": "SMS",
-            "wifi": "Wi-Fi",
-            "data": "Data",
-            "clients": "Clients",
-        }
+        group_names = {"sms": "SMS", "wifi": "Wi-Fi", "data": "Data", "clients": "Clients"}
         display_group = group_names.get(group, group.capitalize())
         sub_name = f"{self._entry.title} {display_group}"
         
-        # Consistent sub-device identifier using host/mac as prefix
-        sub_id_prefix = self.coordinator.mac if self.coordinator.mac else host
+        sub_id_prefix = self.coordinator.mac if self.coordinator.mac else f"host_{host}"
+        identifiers_list = list(main_identifiers)
+        via_device = identifiers_list[0] if identifiers_list else (DOMAIN, host)
         
         return {
             "identifiers": {(DOMAIN, f"{sub_id_prefix}_{group}")},
             "name": sub_name,
             "manufacturer": "TP-Link",
-            "via_device": list(main_identifiers)[0],
+            "via_device": via_device,
         }

@@ -8,11 +8,13 @@ from homeassistant.components.number import (
     NumberEntity,
     NumberEntityDescription,
 )
-from homeassistant.const import CONF_HOST, UnitOfTime
+from homeassistant.const import (
+    CONF_HOST,
+    UnitOfTime,
+)
 from homeassistant.helpers.entity import EntityCategory
-from homeassistant.helpers.device_registry import CONNECTION_NETWORK_MAC
 
-from .const import CONF_SCAN_INTERVAL, DOMAIN
+from .const import DOMAIN, CONF_SCAN_INTERVAL
 from .coordinator import TPLinkRouterDataUpdateCoordinator
 
 _LOGGER = logging.getLogger(__name__)
@@ -20,10 +22,10 @@ _LOGGER = logging.getLogger(__name__)
 POLLING_INTERVAL_DESCRIPTION = NumberEntityDescription(
     key="polling_interval",
     name="Polling Interval",
-    translation_key="polling_interval",
-    native_min_value=30,
+    icon="mdi:timer-cog",
+    native_min_value=10,
     native_max_value=3600,
-    native_step=30,
+    native_step=10,
     native_unit_of_measurement=UnitOfTime.SECONDS,
     entity_category=EntityCategory.CONFIG,
 )
@@ -35,57 +37,68 @@ async def async_setup_entry(hass, entry, async_add_entities):
     async_add_entities([TPLinkPollingInterval(coordinator, entry, POLLING_INTERVAL_DESCRIPTION, initial_value)])
 
 class TPLinkPollingInterval(NumberEntity):
-    """Number entity to control the polling interval."""
+    """Representation of a number entity to control polling interval."""
 
     _attr_has_entity_name = True
     _attr_should_poll = False
-    entity_description: NumberEntityDescription
 
     def __init__(self, coordinator, entry, description, initial_value):
         """Initialize the number entity."""
-        self._coordinator = coordinator
-        self._entry = entry
+        self.coordinator = coordinator
         self.entity_description = description
+        self._entry = entry
         self._attr_unique_id = f"{entry.unique_id}_{description.key}"
         self._attr_native_value = initial_value
         self._refresh_task = None
 
     async def async_set_native_value(self, value: float) -> None:
-        """Handle the UI slider change."""
+        """Update the setting."""
         self._attr_native_value = value
         self.async_write_ha_state()
+        
         if self._refresh_task:
             self._refresh_task.cancel()
+        
         self._refresh_task = asyncio.create_task(self._async_debounced_apply(value))
 
-    async def _async_debounced_apply(self, value: float) -> None:
-        """Apply change and persist to ConfigEntry Options after a delay."""
+    async def _async_debounced_apply(self, value: float):
+        """Apply the value after a short delay."""
         try:
             await asyncio.sleep(2)
             val_int = int(value)
-            self._coordinator.update_interval = timedelta(seconds=val_int)
+            self.coordinator.update_interval = timedelta(seconds=val_int)
+            
             new_options = dict(self._entry.options)
             new_options[CONF_SCAN_INTERVAL] = val_int
             self.hass.config_entries.async_update_entry(self._entry, options=new_options)
-            await self._coordinator.async_request_refresh()
+            
+            await self.coordinator.async_request_refresh()
         except asyncio.CancelledError:
             pass
         except Exception as err:
-            _LOGGER.error("Failed to apply polling interval change: %s", err)
+            _LOGGER.error("Failed to apply polling interval: %s", err)
+
+    async def async_will_remove_from_hass(self) -> None:
+        """Cancel any pending refresh task."""
+        if self._refresh_task:
+            self._refresh_task.cancel()
+            try:
+                await self._refresh_task
+            except asyncio.CancelledError:
+                pass
+            finally:
+                self._refresh_task = None
 
     @property
     def device_info(self):
-        """Return device information."""
+        """Return device information linking to the main router device."""
         host = self._entry.options[CONF_HOST]
-        identifiers = {(DOMAIN, self._coordinator.mac)} if self._coordinator.mac else {(DOMAIN, host)}
-        connections = {(CONNECTION_NETWORK_MAC, self._coordinator.mac)} if self._coordinator.mac else set()
+        main_identifiers = {(DOMAIN, self.coordinator.mac)} if self.coordinator.mac else {(DOMAIN, f"host_{host}")}
+        
         return {
-            "identifiers": identifiers,
-            "connections": connections,
+            "identifiers": main_identifiers,
             "name": self._entry.title,
             "manufacturer": "TP-Link",
-            "model": self._coordinator.firmware.model if self._coordinator.firmware else "NX510v",
-            "sw_version": self._coordinator.firmware.firmware_version if self._coordinator.firmware else None,
-            "hw_version": self._coordinator.firmware.hardware_version if self._coordinator.firmware else None,
+            "model": self.coordinator.firmware.model if self.coordinator.firmware else "TP-Link Router",
             "configuration_url": f"http://{host}",
         }

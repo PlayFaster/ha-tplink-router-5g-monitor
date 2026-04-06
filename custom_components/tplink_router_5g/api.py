@@ -17,10 +17,14 @@ def _safe_int(value, default=0):
         return default
 
 def _parse_uptime_to_seconds(uptime_str):
-    """Convert 'X days HH:MM:SS' or 'HH:MM:SS' to total seconds."""
+    """Convert 'X days HH:MM:SS' or 'HH:MM:SS' to total seconds.
+    
+    Returns None if parsing fails.
+    """
     if not uptime_str or not isinstance(uptime_str, str):
         return None
     try:
+        # Regex to handle both 'X days HH:MM:SS' and 'HH:MM:SS'
         match = re.search(r'(?:(\d+)\s+days?,\s+)?(\d+):(\d+):(\d+)', uptime_str)
         if match:
             days = int(match.group(1)) if match.group(1) else 0
@@ -28,8 +32,10 @@ def _parse_uptime_to_seconds(uptime_str):
             minutes = int(match.group(3))
             seconds = int(match.group(4))
             return days * 86400 + hours * 3600 + minutes * 60 + seconds
-    except:
-        pass
+    except (AttributeError, ValueError, IndexError) as err:
+        _LOGGER.debug("Failed to parse uptime '%s': %s", uptime_str, err)
+    except Exception as err:
+        _LOGGER.error("Unexpected error parsing uptime: %s", err)
     return None
 
 class TPLinkRouter5GAPI:
@@ -44,23 +50,26 @@ class TPLinkRouter5GAPI:
         self.password = password
         self.verify_ssl = verify_ssl
         self.client = None
+        self._client_lock = asyncio.Lock()
 
     async def _ensure_client(self):
         """Ensure the client is initialized in a thread-safe way."""
-        if self.client is None:
-            self.client = await asyncio.to_thread(
-                TplinkRouterProvider.get_client,
-                self.host,
-                self.password,
-                self.username,
-                _LOGGER,
-                self.verify_ssl,
-            )
+        async with self._client_lock:
+            if self.client is None:
+                self.client = await asyncio.to_thread(
+                    TplinkRouterProvider.get_client,
+                    self.host,
+                    self.password,
+                    self.username,
+                    _LOGGER,
+                    self.verify_ssl,
+                )
 
     async def login(self):
         """Authorize with the router."""
         await self._ensure_client()
         await asyncio.to_thread(self.client.authorize)
+        _LOGGER.debug("Successfully authenticated with %s", self.host)
 
     async def logout(self):
         """Logout from the router."""
@@ -68,8 +77,9 @@ class TPLinkRouter5GAPI:
             return
         try:
             await asyncio.to_thread(self.client.logout)
+            _LOGGER.debug("Successfully logged out from %s", self.host)
         except Exception as e:
-            _LOGGER.debug("Logout failed: %s", e)
+            _LOGGER.debug("Logout failed from %s: %s", self.host, e)
 
     async def get_firmware(self):
         """Get firmware info."""
@@ -77,9 +87,29 @@ class TPLinkRouter5GAPI:
         return await asyncio.to_thread(self.client.get_firmware)
 
     async def get_status(self):
-        """Get basic status."""
+        """Get basic status including system uptime."""
         await self._ensure_client()
-        return await asyncio.to_thread(self.client.get_status)
+        status = await asyncio.to_thread(self.client.get_status)
+        
+        # Probe for formatted system uptime (seen in GUI)
+        if status:
+            try:
+                ActItem = self.client.ActItem
+                act = ActItem(ActItem.GET, 'DEV2_SYS_STATUS', '0,0,0,0,0,0', attrs=['upTime'])
+                _, values = await asyncio.to_thread(self.client.req_act, [act])
+                if values and values[0] and values[0].get('upTime'):
+                    status.uptime = _parse_uptime_to_seconds(values[0]['upTime'])
+            except (KeyError, IndexError, TypeError, ValueError, AttributeError):
+                pass
+        return status
+
+    async def send_sms(self, number: str, text: str) -> None:
+        """Send an SMS message through the router."""
+        await self._ensure_client()
+        if hasattr(self.client, "send_sms"):
+            await asyncio.to_thread(self.client.send_sms, number, text)
+        else:
+            _LOGGER.warning("Client does not support send_sms")
 
     async def get_lte_and_extra_status(self):
         """Fetch all LTE/5G and extra metrics in a single session."""
@@ -91,20 +121,12 @@ class TPLinkRouter5GAPI:
         def fetch_all():
             ActItem = self.client.ActItem
             acts = [
-                # 0: Link Config
                 ActItem(ActItem.GET, 'DEV2_LTE_LINK_CFG', '1,0,0,0,0,0', attrs=['enable', 'connectStatus', 'networkType', 'simStatus', 'roamingStatus', 'endcStatus']),
-                # 1: Data Usage
                 ActItem(ActItem.GET, 'DEV2_XTP_LTE_INTF_CFG', '1,0,0,0,0,0', attrs=['totalStatistics', 'curRxSpeed', 'curTxSpeed', 'dailyFlow', 'limitation', 'paymentDay']),
-                # 2: Net Status
                 ActItem(ActItem.GET, 'DEV2_LTE_NET_STATUS', '1,0,0,0,0,0', attrs=['smsUnreadCount', 'sigLevel', 'rfInfoRsrp', 'rfInfoRsrq', 'rfInfoSnr', 'smsSendResult', 'smsSendCause', 'regStat', 'srvStat']),
-                # 3: ISP
                 ActItem(ActItem.GET, 'DEV2_LTE_PROF_STAT', '1,0,0,0,0,0', attrs=['ispName']),
-                # 4: Cells (5G Metrics)
                 ActItem(ActItem.GL, 'DEV2_LTE_SERVING_CELL_INFO', '0,0,0,0,0,0', attrs=[]),
-                # 5: WAN Status (Internet Uptime)
                 ActItem(ActItem.GET, 'DEV2_WAN_IF_STATUS', '1,0,0,0,0,0', attrs=['upTime']),
-                # 6: System Status (Device Uptime)
-                ActItem(ActItem.GET, 'DEV2_SYS_STATUS', '0,0,0,0,0,0', attrs=['upTime']),
             ]
             _, values = self.client.req_act(acts)
             return values
@@ -115,7 +137,7 @@ class TPLinkRouter5GAPI:
         extra = {}
         if values:
             try:
-                # 1. Standard LTEStatus mapping (compatibility)
+                # 1. Standard LTEStatus mapping
                 if len(values) > 0 and values[0]:
                     v0 = values[0]
                     lte_status.enable = _safe_int(v0.get('enable'))
@@ -136,8 +158,11 @@ class TPLinkRouter5GAPI:
                     lte_status.snr = _safe_int(v2.get('rfInfoSnr'))
                 if len(values) > 3 and values[3]:
                     lte_status.isp_name = values[3].get('ispName')
+                
+                if len(values) > 5 and values[5] and values[5].get('upTime'):
+                    extra["wan_uptime_secs"] = _parse_uptime_to_seconds(values[5]['upTime'])
 
-                # 2. Extra Metrics (Unified store)
+                # 2. Extra Metrics
                 if len(values) > 0 and values[0]:
                     extra["roaming"] = values[0].get("roamingStatus")
                     extra["endc_support"] = values[0].get("endcStatus")
@@ -156,12 +181,6 @@ class TPLinkRouter5GAPI:
                     extra["sms_send_cause"] = "None" if cause_code == 0 else f"Error {cause_code}"
                     extra["registration_status"] = {0:"Unregistered", 1:"Registered", 2:"Searching", 3:"Denied", 4:"Unknown", 5:"Roaming"}.get(_safe_int(values[2].get("regStat")), "Unknown")
                     extra["service_status"] = {0:"No Service", 1:"Limited", 2:"Full", 3:"Unknown"}.get(_safe_int(values[2].get("srvStat")), "Unknown")
-
-                # Uptime handling (store in extra)
-                if len(values) > 5 and values[5] and values[5].get('upTime'):
-                    extra["wan_uptime_secs"] = _parse_uptime_to_seconds(values[5]['upTime'])
-                if len(values) > 6 and values[6] and values[6].get('upTime'):
-                    extra["sys_uptime_secs"] = _parse_uptime_to_seconds(values[6]['upTime'])
 
                 if len(values) > 4 and isinstance(values[4], list):
                     for cell in values[4]:
@@ -202,8 +221,10 @@ class TPLinkRouter5GAPI:
                             elif k == 'CGI': extra[f"{prefix}cgi"] = v
                             elif k == 'signalStrength': extra[f"{prefix}signal_pct"] = _safe_int(v) * 25
 
-            except Exception as err:
+            except (KeyError, IndexError, TypeError, ValueError, AttributeError) as err:
                 _LOGGER.error("Error parsing technical status: %s", err)
+            except Exception as err:
+                _LOGGER.error("Unexpected error parsing technical status: %s", err)
 
         return lte_status, extra
 
