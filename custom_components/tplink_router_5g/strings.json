@@ -1,0 +1,66 @@
+{
+  "title": "TP-Link Router 5G Monitor",
+  "config": {
+    "step": {
+      "user": {
+        "title": "Setup TP-Link Router 5G Monitor",
+        "data": {
+          "host": "IP Address",
+          "username": "Username",
+          "password": "Password",
+          "scan_interval": "Scan Interval (sec)",
+          "verify_ssl": "Verify SSL"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Failed to connect to router. Check IP address and password.",
+      "unknown": "Unexpected error occurred."
+    },
+    "abort": {
+      "already_configured": "Device is already configured"
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Reconfigure TP-Link Router 5G Monitor",
+        "data": {
+          "host": "IP Address",
+          "username": "Username",
+          "password": "Password",
+          "scan_interval": "Scan Interval (sec)",
+          "verify_ssl": "Verify SSL"
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "clients_total": { "name": "Total Clients" },
+      "cpu_used": { "name": "CPU Used" },
+      "memory_used": { "name": "Memory Used" },
+      "lte_network_type": { "name": "Network Type" },
+      "lte_total_statistics": { "name": "Total Data Statistics" },
+      "lte_cur_rx_speed": { "name": "Download Speed" },
+      "lte_cur_tx_speed": { "name": "Upload Speed" },
+      "nr_rsrp": { "name": "5G RSRP" },
+      "nr_rsrq": { "name": "5G RSRQ" },
+      "nr_snr": { "name": "5G SNR" },
+      "nr_band": { "name": "5G Band" },
+      "nr_dl_mod": { "name": "5G DL Modulation" },
+      "nr_ul_mod": { "name": "5G UL Modulation" },
+      "lte_anchor_rsrp": { "name": "LTE Anchor RSRP" },
+      "lte_anchor_band": { "name": "LTE Anchor Band" }
+    },
+    "button": {
+      "reboot": { "name": "Reboot" }
+    },
+    "switch": {
+      "pause_polling": { "name": "Pause Polling" }
+    },
+    "number": {
+      "polling_interval": { "name": "Polling Interval" }
+    }
+  }
+}
