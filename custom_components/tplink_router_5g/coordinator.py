@@ -14,29 +14,6 @@ from .const import CONF_SCAN_INTERVAL, CONF_STOP_POLLING
 
 _LOGGER = logging.getLogger(__name__)
 
-# Fallback for Python < 3.11
-try:
-    from asyncio import timeout as asyncio_timeout
-except ImportError:
-    import async_timeout
-
-    class AsyncioTimeout:
-        """Asyncio timeout context manager fallback."""
-
-        def __init__(self, delay):
-            """Initialize timeout."""
-            self._timeout = async_timeout.timeout(delay)
-
-        async def __aenter__(self):
-            """Enter context."""
-            return await self._timeout.__aenter__()
-
-        async def __aexit__(self, *args):
-            """Exit context."""
-            return await self._timeout.__aexit__(*args)
-
-    asyncio_timeout = AsyncioTimeout
-
 
 class TPLinkRouterDataUpdateCoordinator(DataUpdateCoordinator):
     """Class to manage fetching TP-Link Router data with resilience."""
@@ -71,7 +48,7 @@ class TPLinkRouterDataUpdateCoordinator(DataUpdateCoordinator):
             return self.data
 
         try:
-            async with asyncio_timeout(30):  # 30s timeout for the whole cycle
+            async with asyncio.timeout(30):  # 30s timeout for the whole cycle
                 # Session Start
                 await self.api.login()
 
@@ -108,7 +85,7 @@ class TPLinkRouterDataUpdateCoordinator(DataUpdateCoordinator):
                 self.consecutive_failures = 0
                 return data
 
-        except TimeoutError as err:
+        except asyncio.TimeoutError as err:
             self.consecutive_failures += 1
             if self.data is not None and self.consecutive_failures <= 2:
                 _LOGGER.warning(

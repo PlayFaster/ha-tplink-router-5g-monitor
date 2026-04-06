@@ -11,7 +11,11 @@ from homeassistant.components.binary_sensor import (
 )
 from homeassistant.const import (
     CONF_HOST,
+    EntityCategory,
 )
+from homeassistant.core import HomeAssistant
+from homeassistant.config_entries import ConfigEntry
+from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import DOMAIN
@@ -33,24 +37,31 @@ BINARY_SENSORS: Final[tuple[TPLinkBinarySensorEntityDescription, ...]] = (
         name="Best Connection",
         icon="mdi:star-check",
         device_class=BinarySensorDeviceClass.CONNECTIVITY,
+        entity_category=EntityCategory.DIAGNOSTIC,
         group="main",
     ),
     TPLinkBinarySensorEntityDescription(
         key="endc_support",
         name="5G ENDC Support",
         icon="mdi:signal-5g",
+        entity_category=EntityCategory.DIAGNOSTIC,
         group="main",
     ),
     TPLinkBinarySensorEntityDescription(
         key="roaming",
         name="Roaming Status",
         icon="mdi:airplane",
+        entity_category=EntityCategory.DIAGNOSTIC,
         group="main",
     ),
 )
 
 
-async def async_setup_entry(hass, entry, async_add_entities):
+async def async_setup_entry(
+    hass: HomeAssistant,
+    entry: ConfigEntry,
+    async_add_entities: AddEntitiesCallback,
+) -> None:
     """Set up the binary sensor platform."""
     coordinator: TPLinkRouterDataUpdateCoordinator = hass.data[DOMAIN][entry.entry_id]
 

@@ -48,9 +48,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         """Service to send SMS."""
         number = call.data.get("number")
         text = call.data.get("text")
-        await api.login()
-        await api.send_sms(number, text)
-        await api.logout()
+        try:
+            await api.send_sms(number, text)
+        except Exception as err:
+            _LOGGER.error("Failed to send SMS: %s", err)
 
     hass.services.async_register(DOMAIN, "send_sms", send_sms_service)
 

@@ -22,8 +22,8 @@ def _user_schema(defaults: dict) -> vol.Schema:
             ): str,
             vol.Required(CONF_PASSWORD, default=defaults.get(CONF_PASSWORD, "")): str,
             vol.Required(
-                CONF_SCAN_INTERVAL, default=defaults.get(CONF_SCAN_INTERVAL, 30)
-            ): int,
+                CONF_SCAN_INTERVAL, default=defaults.get(CONF_SCAN_INTERVAL, 120)
+            ): vol.All(vol.Coerce(int), vol.Range(min=30, max=7200)),
             vol.Required(
                 CONF_VERIFY_SSL, default=defaults.get(CONF_VERIFY_SSL, False)
             ): bool,

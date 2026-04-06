@@ -19,29 +19,6 @@ def _safe_int(value, default=0):
         return default
 
 
-def _parse_uptime_to_seconds(uptime_str):
-    """Convert 'X days HH:MM:SS' or 'HH:MM:SS' to total seconds.
-
-    Returns None if parsing fails.
-    """
-    if not uptime_str or not isinstance(uptime_str, str):
-        return None
-    try:
-        # Regex to handle both 'X days HH:MM:SS' and 'HH:MM:SS'
-        match = re.search(r"(?:(\d+)\s+days?,\s+)?(\d+):(\d+):(\d+)", uptime_str)
-        if match:
-            days = int(match.group(1)) if match.group(1) else 0
-            hours = int(match.group(2))
-            minutes = int(match.group(3))
-            seconds = int(match.group(4))
-            return days * 86400 + hours * 3600 + minutes * 60 + seconds
-    except (AttributeError, ValueError, IndexError) as err:
-        _LOGGER.debug("Failed to parse uptime '%s': %s", uptime_str, err)
-    except Exception as err:
-        _LOGGER.error("Unexpected error parsing uptime: %s", err)
-    return None
-
-
 class TPLinkRouter5GAPI:
     """Async wrapper for the TP-Link Router library."""
 
@@ -91,31 +68,20 @@ class TPLinkRouter5GAPI:
         return await asyncio.to_thread(self.client.get_firmware)
 
     async def get_status(self):
-        """Get basic status including system uptime."""
+        """Get basic status."""
         await self._ensure_client()
-        status = await asyncio.to_thread(self.client.get_status)
-
-        # Probe for formatted system uptime (seen in GUI)
-        if status:
-            try:
-                act_item = self.client.ActItem
-                act = act_item(
-                    act_item.GET, "DEV2_SYS_STATUS", "0,0,0,0,0,0", attrs=["upTime"]
-                )
-                _, values = await asyncio.to_thread(self.client.req_act, [act])
-                if values and values[0] and values[0].get("upTime"):
-                    status.uptime = _parse_uptime_to_seconds(values[0]["upTime"])
-            except (KeyError, IndexError, TypeError, ValueError, AttributeError):
-                pass
-        return status
+        return await asyncio.to_thread(self.client.get_status)
 
     async def send_sms(self, number: str, text: str) -> None:
         """Send an SMS message through the router."""
-        await self._ensure_client()
-        if hasattr(self.client, "send_sms"):
-            await asyncio.to_thread(self.client.send_sms, number, text)
-        else:
-            _LOGGER.warning("Client does not support send_sms")
+        await self.login()
+        try:
+            if hasattr(self.client, "send_sms"):
+                await asyncio.to_thread(self.client.send_sms, number, text)
+            else:
+                _LOGGER.warning("Client does not support send_sms")
+        finally:
+            await self.logout()
 
     async def get_lte_and_extra_status(self):
         """Fetch all LTE/5G and extra metrics in a single session."""

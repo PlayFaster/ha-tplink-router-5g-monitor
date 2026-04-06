@@ -12,6 +12,9 @@ from homeassistant.const import (
     CONF_HOST,
     UnitOfTime,
 )
+from homeassistant.core import HomeAssistant
+from homeassistant.config_entries import ConfigEntry
+from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.entity import EntityCategory
 
 from .const import CONF_SCAN_INTERVAL, DOMAIN
@@ -22,6 +25,7 @@ _LOGGER = logging.getLogger(__name__)
 POLLING_INTERVAL_DESCRIPTION = NumberEntityDescription(
     key="polling_interval",
     name="Polling Interval",
+    translation_key="polling_interval",
     icon="mdi:timer-cog",
     native_min_value=30,
     native_max_value=7200,
@@ -31,7 +35,11 @@ POLLING_INTERVAL_DESCRIPTION = NumberEntityDescription(
 )
 
 
-async def async_setup_entry(hass, entry, async_add_entities):
+async def async_setup_entry(
+    hass: HomeAssistant,
+    entry: ConfigEntry,
+    async_add_entities: AddEntitiesCallback,
+) -> None:
     """Set up the number platform."""
     coordinator: TPLinkRouterDataUpdateCoordinator = hass.data[DOMAIN][entry.entry_id]
     initial_value = entry.options.get(CONF_SCAN_INTERVAL, 120)

@@ -11,6 +11,9 @@ from homeassistant.components.button import (
 from homeassistant.const import (
     CONF_HOST,
 )
+from homeassistant.core import HomeAssistant
+from homeassistant.config_entries import ConfigEntry
+from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import DOMAIN
@@ -37,7 +40,11 @@ BUTTON_TYPES = (
 )
 
 
-async def async_setup_entry(hass, entry, async_add_entities):
+async def async_setup_entry(
+    hass: HomeAssistant,
+    entry: ConfigEntry,
+    async_add_entities: AddEntitiesCallback,
+) -> None:
     """Set up the button platform."""
     coordinator: TPLinkRouterDataUpdateCoordinator = hass.data[DOMAIN][entry.entry_id]
 
@@ -66,7 +73,9 @@ class TPLinkRebootButton(
     async def async_press(self) -> None:
         """Handle the button press."""
         try:
+            await self.coordinator.api.login()
             await self.coordinator.api.reboot()
+            await self.coordinator.api.logout()
         except Exception as err:
             _LOGGER.error("%s: Reboot failed: %s", self._entry.title, err)
 

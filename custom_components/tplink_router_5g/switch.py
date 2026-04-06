@@ -6,6 +6,9 @@ from typing import Any, Final
 
 from homeassistant.components.switch import SwitchEntity, SwitchEntityDescription
 from homeassistant.const import CONF_HOST
+from homeassistant.core import HomeAssistant
+from homeassistant.config_entries import ConfigEntry
+from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
@@ -91,7 +94,11 @@ WIFI_SWITCHES: Final[tuple[TPLinkWifiSwitchDescription, ...]] = (
 )
 
 
-async def async_setup_entry(hass, entry, async_add_entities):
+async def async_setup_entry(
+    hass: HomeAssistant,
+    entry: ConfigEntry,
+    async_add_entities: AddEntitiesCallback,
+) -> None:
     """Set up the switch platform."""
     coordinator: TPLinkRouterDataUpdateCoordinator = hass.data[DOMAIN][entry.entry_id]
 
@@ -134,10 +141,12 @@ class TPLinkWifiSwitch(
         """Turn the entity on."""
         try:
             await self.coordinator.api.login()
-            await self.coordinator.api.set_wifi(
-                self.entity_description.wifi_connection, True
-            )
-            await self.coordinator.api.logout()
+            try:
+                await self.coordinator.api.set_wifi(
+                    self.entity_description.wifi_connection, True
+                )
+            finally:
+                await self.coordinator.api.logout()
         except Exception as err:
             _LOGGER.error(
                 "%s: Failed to turn on %s: %s",
@@ -153,10 +162,12 @@ class TPLinkWifiSwitch(
         """Turn the entity off."""
         try:
             await self.coordinator.api.login()
-            await self.coordinator.api.set_wifi(
-                self.entity_description.wifi_connection, False
-            )
-            await self.coordinator.api.logout()
+            try:
+                await self.coordinator.api.set_wifi(
+                    self.entity_description.wifi_connection, False
+                )
+            finally:
+                await self.coordinator.api.logout()
         except Exception as err:
             _LOGGER.error(
                 "%s: Failed to turn off %s: %s",
