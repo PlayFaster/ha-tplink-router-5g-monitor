@@ -39,7 +39,7 @@ class TPLinkRouterDataUpdateCoordinator(DataUpdateCoordinator):
         self.firmware = None
         self.mac = None
 
-        scan_interval = entry.options.get(CONF_SCAN_INTERVAL, 30)
+        scan_interval = entry.options.get(CONF_SCAN_INTERVAL, 120)
 
         super().__init__(
             hass,
@@ -61,27 +61,27 @@ class TPLinkRouterDataUpdateCoordinator(DataUpdateCoordinator):
             async with asyncio_timeout(30): # 30s timeout for the whole cycle
                 # Session Start
                 await self.api.login()
-
+                
                 if not self.firmware:
                     self.firmware = await self.api.get_firmware()
                     await asyncio.sleep(0.5)
-
+                
                 # 1. Main Status
                 status = await self.api.get_status()
                 if status and status.lan_macaddr:
                     self.mac = status.lan_macaddr
                 await asyncio.sleep(0.5)
-
+                
                 # 2. Consolidated LTE and 5G Metrics
                 lte_status, extra_lte = await self.api.get_lte_and_extra_status()
                 await asyncio.sleep(0.5)
-
+                
                 # 3. Optional Info
                 ipv4_status = await self.api.get_ipv4_status()
                 await asyncio.sleep(0.5)
-
+                
                 vpn_status = await self.api.get_vpn_status()
-
+                
                 data = {
                     "status": status,
                     "lte_status": lte_status,
@@ -95,7 +95,7 @@ class TPLinkRouterDataUpdateCoordinator(DataUpdateCoordinator):
                 self.consecutive_failures = 0
                 return data
 
-        except TimeoutError:
+        except asyncio.TimeoutError:
             self.consecutive_failures += 1
             if self.data is not None and self.consecutive_failures <= 2:
                 _LOGGER.warning("%s: Fetch timed out. Holding last known values.", self.entry.title)
@@ -107,7 +107,7 @@ class TPLinkRouterDataUpdateCoordinator(DataUpdateCoordinator):
             if self.data is not None and self.consecutive_failures <= 2:
                 _LOGGER.warning("%s: Fetch failed (%s). Holding last known values.", self.entry.title, err)
                 return self.data
-
+            
             _LOGGER.error("%s: Connection lost: %s", self.entry.title, err)
             raise UpdateFailed(f"Communication error: {err}")
         finally:
