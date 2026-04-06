@@ -20,13 +20,14 @@ PLATFORMS = [
     Platform.NUMBER,
 ]
 
+
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up TP-Link Router 5G Monitor from a config entry."""
     api = TPLinkRouter5GAPI(
         entry.options[CONF_HOST],
         entry.options.get(CONF_USERNAME),
         entry.options[CONF_PASSWORD],
-        entry.options.get(CONF_VERIFY_SSL, False)
+        entry.options.get(CONF_VERIFY_SSL, False),
     )
 
     coordinator = TPLinkRouterDataUpdateCoordinator(hass, entry, api)
@@ -58,11 +59,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             await coordinator.async_refresh()
             _LOGGER.info("%s: Background initialization complete.", entry.title)
         except Exception as err:
-            _LOGGER.warning("%s: Background initialization failed: %s", entry.title, err)
+            _LOGGER.warning(
+                "%s: Background initialization failed: %s", entry.title, err
+            )
 
     hass.async_create_task(_async_background_setup())
 
     return True
+
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Unload a config entry."""

@@ -12,26 +12,35 @@ from .const import CONF_SCAN_INTERVAL, DEFAULT_NAME, DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
 
+
 def _user_schema(defaults: dict) -> vol.Schema:
     return vol.Schema(
         {
             vol.Required(CONF_HOST, default=defaults.get(CONF_HOST, "")): str,
-            vol.Optional(CONF_USERNAME, default=defaults.get(CONF_USERNAME, "user")): str,
+            vol.Optional(
+                CONF_USERNAME, default=defaults.get(CONF_USERNAME, "user")
+            ): str,
             vol.Required(CONF_PASSWORD, default=defaults.get(CONF_PASSWORD, "")): str,
-            vol.Required(CONF_SCAN_INTERVAL, default=defaults.get(CONF_SCAN_INTERVAL, 30)): int,
-            vol.Required(CONF_VERIFY_SSL, default=defaults.get(CONF_VERIFY_SSL, False)): bool,
+            vol.Required(
+                CONF_SCAN_INTERVAL, default=defaults.get(CONF_SCAN_INTERVAL, 30)
+            ): int,
+            vol.Required(
+                CONF_VERIFY_SSL, default=defaults.get(CONF_VERIFY_SSL, False)
+            ): bool,
         }
     )
+
 
 async def _validate_credentials(user_input: dict) -> None:
     api = TPLinkRouter5GAPI(
         user_input[CONF_HOST],
         user_input.get(CONF_USERNAME),
         user_input[CONF_PASSWORD],
-        user_input.get(CONF_VERIFY_SSL, False)
+        user_input.get(CONF_VERIFY_SSL, False),
     )
     await api.login()
     await api.logout()
+
 
 class TPLinkRouter5GConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """Handle a config flow."""
@@ -67,6 +76,7 @@ class TPLinkRouter5GConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     @config_entries.callback
     def async_get_options_flow(entry):
         return TPLinkRouter5GOptionsFlow(entry)
+
 
 class TPLinkRouter5GOptionsFlow(config_entries.OptionsFlow):
     """Handle options flow."""

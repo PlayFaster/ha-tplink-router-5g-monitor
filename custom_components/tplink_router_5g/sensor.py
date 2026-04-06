@@ -27,6 +27,7 @@ from .coordinator import TPLinkRouterDataUpdateCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 
+
 @dataclass(frozen=True, kw_only=True)
 class TPLinkSensorEntityDescription(SensorEntityDescription):
     """Describes TP-Link sensor entity."""
@@ -34,6 +35,7 @@ class TPLinkSensorEntityDescription(SensorEntityDescription):
     value_fn: Callable[[Any], Any]
     sensor_type: str = "status"
     group: str = "main"
+
 
 SENSOR_TYPES: Final[tuple[TPLinkSensorEntityDescription, ...]] = (
     # --- Main Device: Diagnostics ---
@@ -45,7 +47,11 @@ SENSOR_TYPES: Final[tuple[TPLinkSensorEntityDescription, ...]] = (
         native_unit_of_measurement=PERCENTAGE,
         suggested_display_precision=1,
         entity_category=EntityCategory.DIAGNOSTIC,
-        value_fn=lambda data: (data["status"].cpu_usage * 100) if data["status"].cpu_usage is not None else None,
+        value_fn=lambda data: (
+            (data["status"].cpu_usage * 100)
+            if data["status"].cpu_usage is not None
+            else None
+        ),
     ),
     TPLinkSensorEntityDescription(
         key="memory_used",
@@ -55,7 +61,11 @@ SENSOR_TYPES: Final[tuple[TPLinkSensorEntityDescription, ...]] = (
         native_unit_of_measurement=PERCENTAGE,
         suggested_display_precision=1,
         entity_category=EntityCategory.DIAGNOSTIC,
-        value_fn=lambda data: (data["status"].mem_usage * 100) if data["status"].mem_usage is not None else None,
+        value_fn=lambda data: (
+            (data["status"].mem_usage * 100)
+            if data["status"].mem_usage is not None
+            else None
+        ),
     ),
     TPLinkSensorEntityDescription(
         key="lte_isp_name",
@@ -63,7 +73,9 @@ SENSOR_TYPES: Final[tuple[TPLinkSensorEntityDescription, ...]] = (
         icon="mdi:sim-outline",
         sensor_type="lte_status",
         entity_category=EntityCategory.DIAGNOSTIC,
-        value_fn=lambda data: data["lte_status"].isp_name if data["lte_status"] else None,
+        value_fn=lambda data: (
+            data["lte_status"].isp_name if data["lte_status"] else None
+        ),
     ),
     TPLinkSensorEntityDescription(
         key="sim_status_info",
@@ -71,7 +83,9 @@ SENSOR_TYPES: Final[tuple[TPLinkSensorEntityDescription, ...]] = (
         icon="mdi:sim-outline",
         sensor_type="lte_status",
         entity_category=EntityCategory.DIAGNOSTIC,
-        value_fn=lambda data: data["lte_status"].sim_status_info if data["lte_status"] else None,
+        value_fn=lambda data: (
+            data["lte_status"].sim_status_info if data["lte_status"] else None
+        ),
     ),
     TPLinkSensorEntityDescription(
         key="lan_ipv4_addr",
@@ -100,7 +114,9 @@ SENSOR_TYPES: Final[tuple[TPLinkSensorEntityDescription, ...]] = (
         icon="mdi:dns",
         sensor_type="ipv4_status",
         entity_category=EntityCategory.DIAGNOSTIC,
-        value_fn=lambda data: data["ipv4_status"].wan_ipv4_pridns if data["ipv4_status"] else None,
+        value_fn=lambda data: (
+            data["ipv4_status"].wan_ipv4_pridns if data["ipv4_status"] else None
+        ),
     ),
     TPLinkSensorEntityDescription(
         key="secondary_dns",
@@ -108,7 +124,9 @@ SENSOR_TYPES: Final[tuple[TPLinkSensorEntityDescription, ...]] = (
         icon="mdi:dns",
         sensor_type="ipv4_status",
         entity_category=EntityCategory.DIAGNOSTIC,
-        value_fn=lambda data: data["ipv4_status"].wan_ipv4_snddns if data["ipv4_status"] else None,
+        value_fn=lambda data: (
+            data["ipv4_status"].wan_ipv4_snddns if data["ipv4_status"] else None
+        ),
     ),
     TPLinkSensorEntityDescription(
         key="last_updated",
@@ -116,29 +134,37 @@ SENSOR_TYPES: Final[tuple[TPLinkSensorEntityDescription, ...]] = (
         icon="mdi:update",
         device_class=SensorDeviceClass.TIMESTAMP,
         entity_category=EntityCategory.DIAGNOSTIC,
-        value_fn=lambda data: None, # Handled in native_value
+        value_fn=lambda data: None,  # Handled in native_value
     ),
-
     # --- Main Device: Connection Metrics ---
     TPLinkSensorEntityDescription(
         key="lte_connection_status",
         name="Connection Status",
         icon="mdi:signal-variant",
         sensor_type="lte_status",
-        value_fn=lambda data: {
-            0: "Disconnected",
-            1: "Connecting",
-            2: "Connected",
-            3: "Disconnecting",
-            4: "Connected",
-        }.get(data["lte_status"].connect_status, f"Unknown ({data['lte_status'].connect_status})") if data["lte_status"] else None,
+        value_fn=lambda data: (
+            {
+                0: "Disconnected",
+                1: "Connecting",
+                2: "Connected",
+                3: "Disconnecting",
+                4: "Connected",
+            }.get(
+                data["lte_status"].connect_status,
+                f"Unknown ({data['lte_status'].connect_status})",
+            )
+            if data["lte_status"]
+            else None
+        ),
     ),
     TPLinkSensorEntityDescription(
         key="lte_network_type",
         name="Network Type",
         icon="mdi:transmission-tower",
         sensor_type="lte_status",
-        value_fn=lambda data: data["lte_status"].network_type_info if data["lte_status"] else None,
+        value_fn=lambda data: (
+            data["lte_status"].network_type_info if data["lte_status"] else None
+        ),
     ),
     TPLinkSensorEntityDescription(
         key="registration_status",
@@ -156,7 +182,6 @@ SENSOR_TYPES: Final[tuple[TPLinkSensorEntityDescription, ...]] = (
         entity_category=EntityCategory.DIAGNOSTIC,
         value_fn=lambda data: data["extra_lte_status"].get("service_status"),
     ),
-
     # --- Data Sub-device ---
     TPLinkSensorEntityDescription(
         key="daily_usage",
@@ -208,7 +233,9 @@ SENSOR_TYPES: Final[tuple[TPLinkSensorEntityDescription, ...]] = (
         device_class=SensorDeviceClass.DATA_SIZE,
         sensor_type="lte_status",
         group="data",
-        value_fn=lambda data: data["lte_status"].total_statistics if data["lte_status"] else None,
+        value_fn=lambda data: (
+            data["lte_status"].total_statistics if data["lte_status"] else None
+        ),
     ),
     TPLinkSensorEntityDescription(
         key="lte_cur_rx_speed",
@@ -219,7 +246,9 @@ SENSOR_TYPES: Final[tuple[TPLinkSensorEntityDescription, ...]] = (
         device_class=SensorDeviceClass.DATA_RATE,
         sensor_type="lte_status",
         group="data",
-        value_fn=lambda data: data["lte_status"].cur_rx_speed if data["lte_status"] else None,
+        value_fn=lambda data: (
+            data["lte_status"].cur_rx_speed if data["lte_status"] else None
+        ),
     ),
     TPLinkSensorEntityDescription(
         key="lte_cur_tx_speed",
@@ -230,9 +259,10 @@ SENSOR_TYPES: Final[tuple[TPLinkSensorEntityDescription, ...]] = (
         device_class=SensorDeviceClass.DATA_RATE,
         sensor_type="lte_status",
         group="data",
-        value_fn=lambda data: data["lte_status"].cur_tx_speed if data["lte_status"] else None,
+        value_fn=lambda data: (
+            data["lte_status"].cur_tx_speed if data["lte_status"] else None
+        ),
     ),
-
     # --- SMS Sub-device ---
     TPLinkSensorEntityDescription(
         key="lte_sms_unread_count",
@@ -241,7 +271,9 @@ SENSOR_TYPES: Final[tuple[TPLinkSensorEntityDescription, ...]] = (
         state_class=SensorStateClass.TOTAL,
         sensor_type="lte_status",
         group="sms",
-        value_fn=lambda data: data["lte_status"].sms_unread_count if data["lte_status"] else None,
+        value_fn=lambda data: (
+            data["lte_status"].sms_unread_count if data["lte_status"] else None
+        ),
     ),
     TPLinkSensorEntityDescription(
         key="sms_send_result",
@@ -261,7 +293,6 @@ SENSOR_TYPES: Final[tuple[TPLinkSensorEntityDescription, ...]] = (
         entity_category=EntityCategory.DIAGNOSTIC,
         value_fn=lambda data: data["extra_lte_status"].get("sms_send_cause"),
     ),
-
     # --- Clients Sub-device ---
     TPLinkSensorEntityDescription(
         key="clients_total",
@@ -343,7 +374,11 @@ EXTRA_LTE_SENSOR_TYPES: Final[tuple[TPLinkSensorEntityDescription, ...]] = (
         state_class=SensorStateClass.MEASUREMENT,
         native_unit_of_measurement="dB",
         sensor_type="extra_lte_status",
-        value_fn=lambda data: 0.1 * int(data["extra_lte_status"].get("nr_snr")) if data["extra_lte_status"].get("nr_snr") else None,
+        value_fn=lambda data: (
+            0.1 * int(data["extra_lte_status"].get("nr_snr"))
+            if data["extra_lte_status"].get("nr_snr")
+            else None
+        ),
     ),
     TPLinkSensorEntityDescription(
         key="nr_signal_pct",
@@ -359,7 +394,11 @@ EXTRA_LTE_SENSOR_TYPES: Final[tuple[TPLinkSensorEntityDescription, ...]] = (
         name="5G Band",
         icon="mdi:radio-tower",
         sensor_type="extra_lte_status",
-        value_fn=lambda data: f"N{data['extra_lte_status'].get('nr_band')}" if data["extra_lte_status"].get('nr_band') else None,
+        value_fn=lambda data: (
+            f"N{data['extra_lte_status'].get('nr_band')}"
+            if data["extra_lte_status"].get("nr_band")
+            else None
+        ),
     ),
     TPLinkSensorEntityDescription(
         key="nr_dl_mod",
@@ -486,7 +525,6 @@ EXTRA_LTE_SENSOR_TYPES: Final[tuple[TPLinkSensorEntityDescription, ...]] = (
         entity_category=EntityCategory.DIAGNOSTIC,
         value_fn=lambda data: data["extra_lte_status"].get("nr_arfcn"),
     ),
-
     # --- LTE Anchor Metrics ---
     TPLinkSensorEntityDescription(
         key="lte_anchor_rsrp",
@@ -540,7 +578,11 @@ EXTRA_LTE_SENSOR_TYPES: Final[tuple[TPLinkSensorEntityDescription, ...]] = (
         name="LTE Anchor Band",
         icon="mdi:radio-tower",
         sensor_type="extra_lte_status",
-        value_fn=lambda data: f"B{data['extra_lte_status'].get('lte_band')}" if data["extra_lte_status"].get('lte_band') else None,
+        value_fn=lambda data: (
+            f"B{data['extra_lte_status'].get('lte_band')}"
+            if data["extra_lte_status"].get("lte_band")
+            else None
+        ),
     ),
     TPLinkSensorEntityDescription(
         key="lte_anchor_dl_bw",
@@ -702,6 +744,7 @@ EXTRA_LTE_SENSOR_TYPES: Final[tuple[TPLinkSensorEntityDescription, ...]] = (
     ),
 )
 
+
 async def async_setup_entry(hass, entry, async_add_entities):
     """Set up the sensor platform."""
     coordinator: TPLinkRouterDataUpdateCoordinator = hass.data[DOMAIN][entry.entry_id]
@@ -715,7 +758,10 @@ async def async_setup_entry(hass, entry, async_add_entities):
 
     async_add_entities(entities)
 
-class TPLinkRouterSensor(CoordinatorEntity[TPLinkRouterDataUpdateCoordinator], SensorEntity):
+
+class TPLinkRouterSensor(
+    CoordinatorEntity[TPLinkRouterDataUpdateCoordinator], SensorEntity
+):
     """Representation of a TP-Link Router sensor."""
 
     _attr_has_entity_name = True
@@ -753,22 +799,41 @@ class TPLinkRouterSensor(CoordinatorEntity[TPLinkRouterDataUpdateCoordinator], S
         host = self._entry.options[CONF_HOST]
         group = self.entity_description.group
 
-        main_identifiers = {(DOMAIN, self.coordinator.mac)} if self.coordinator.mac else {(DOMAIN, f"host_{host}")}
+        main_identifiers = (
+            {(DOMAIN, self.coordinator.mac)}
+            if self.coordinator.mac
+            else {(DOMAIN, f"host_{host}")}
+        )
 
         if group == "main":
-            connections = {(CONNECTION_NETWORK_MAC, self.coordinator.mac)} if self.coordinator.mac else set()
+            connections = (
+                {(CONNECTION_NETWORK_MAC, self.coordinator.mac)}
+                if self.coordinator.mac
+                else set()
+            )
             return {
                 "identifiers": main_identifiers,
                 "connections": connections,
                 "name": self._entry.title,
                 "manufacturer": "TP-Link",
-                "model": self.coordinator.firmware.model if self.coordinator.firmware else "TP-Link Router",
-                "sw_version": self.coordinator.firmware.firmware_version if self.coordinator.firmware else None,
-                "hw_version": self.coordinator.firmware.hardware_version if self.coordinator.firmware else None,
+                "model": self.coordinator.firmware.model
+                if self.coordinator.firmware
+                else "TP-Link Router",
+                "sw_version": self.coordinator.firmware.firmware_version
+                if self.coordinator.firmware
+                else None,
+                "hw_version": self.coordinator.firmware.hardware_version
+                if self.coordinator.firmware
+                else None,
                 "configuration_url": f"http://{host}",
             }
 
-        group_names = {"sms": "SMS", "wifi": "Wi-Fi", "data": "Data", "clients": "Clients"}
+        group_names = {
+            "sms": "SMS",
+            "wifi": "Wi-Fi",
+            "data": "Data",
+            "clients": "Clients",
+        }
         display_group = group_names.get(group, group.capitalize())
         sub_name = f"{self._entry.title} {display_group}"
 

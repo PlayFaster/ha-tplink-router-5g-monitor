@@ -14,7 +14,7 @@ from homeassistant.const import (
 )
 from homeassistant.helpers.entity import EntityCategory
 
-from .const import DOMAIN, CONF_SCAN_INTERVAL
+from .const import CONF_SCAN_INTERVAL, DOMAIN
 from .coordinator import TPLinkRouterDataUpdateCoordinator
 
 _LOGGER = logging.getLogger(__name__)
@@ -30,11 +30,19 @@ POLLING_INTERVAL_DESCRIPTION = NumberEntityDescription(
     entity_category=EntityCategory.CONFIG,
 )
 
+
 async def async_setup_entry(hass, entry, async_add_entities):
     """Set up the number platform."""
     coordinator: TPLinkRouterDataUpdateCoordinator = hass.data[DOMAIN][entry.entry_id]
     initial_value = entry.options.get(CONF_SCAN_INTERVAL, 120)
-    async_add_entities([TPLinkPollingInterval(coordinator, entry, POLLING_INTERVAL_DESCRIPTION, initial_value)])
+    async_add_entities(
+        [
+            TPLinkPollingInterval(
+                coordinator, entry, POLLING_INTERVAL_DESCRIPTION, initial_value
+            )
+        ]
+    )
+
 
 class TPLinkPollingInterval(NumberEntity):
     """Representation of a number entity to control polling interval."""
@@ -55,10 +63,10 @@ class TPLinkPollingInterval(NumberEntity):
         """Update the setting."""
         self._attr_native_value = value
         self.async_write_ha_state()
-        
+
         if self._refresh_task:
             self._refresh_task.cancel()
-        
+
         self._refresh_task = asyncio.create_task(self._async_debounced_apply(value))
 
     async def _async_debounced_apply(self, value: float):
@@ -67,11 +75,13 @@ class TPLinkPollingInterval(NumberEntity):
             await asyncio.sleep(2)
             val_int = int(value)
             self.coordinator.update_interval = timedelta(seconds=val_int)
-            
+
             new_options = dict(self._entry.options)
             new_options[CONF_SCAN_INTERVAL] = val_int
-            self.hass.config_entries.async_update_entry(self._entry, options=new_options)
-            
+            self.hass.config_entries.async_update_entry(
+                self._entry, options=new_options
+            )
+
             await self.coordinator.async_request_refresh()
         except asyncio.CancelledError:
             pass
@@ -93,12 +103,18 @@ class TPLinkPollingInterval(NumberEntity):
     def device_info(self):
         """Return device information linking to the main router device."""
         host = self._entry.options[CONF_HOST]
-        main_identifiers = {(DOMAIN, self.coordinator.mac)} if self.coordinator.mac else {(DOMAIN, f"host_{host}")}
-        
+        main_identifiers = (
+            {(DOMAIN, self.coordinator.mac)}
+            if self.coordinator.mac
+            else {(DOMAIN, f"host_{host}")}
+        )
+
         return {
             "identifiers": main_identifiers,
             "name": self._entry.title,
             "manufacturer": "TP-Link",
-            "model": self.coordinator.firmware.model if self.coordinator.firmware else "TP-Link Router",
+            "model": self.coordinator.firmware.model
+            if self.coordinator.firmware
+            else "TP-Link Router",
             "configuration_url": f"http://{host}",
         }

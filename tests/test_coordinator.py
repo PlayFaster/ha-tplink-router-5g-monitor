@@ -20,7 +20,9 @@ async def test_coordinator_update_success(mock_api, mock_config_entry):
 
     coordinator = TPLinkRouterDataUpdateCoordinator(hass, mock_config_entry, mock_api)
 
-    with patch("homeassistant.helpers.update_coordinator.DataUpdateCoordinator.__init__"):
+    with patch(
+        "homeassistant.helpers.update_coordinator.DataUpdateCoordinator.__init__"
+    ):
         data = await coordinator._async_update_data()
 
         assert data["status"].clients_total == 5

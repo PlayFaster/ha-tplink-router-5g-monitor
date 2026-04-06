@@ -28,6 +28,7 @@ class TPLinkWifiSwitchDescription(SwitchEntityDescription):
     property_name: str
     group: str = "wifi"
 
+
 WIFI_SWITCHES: Final[tuple[TPLinkWifiSwitchDescription, ...]] = (
     TPLinkWifiSwitchDescription(
         key="wifi_2g_main",
@@ -94,6 +95,7 @@ WIFI_SWITCHES: Final[tuple[TPLinkWifiSwitchDescription, ...]] = (
     ),
 )
 
+
 async def async_setup_entry(hass, entry, async_add_entities):
     """Set up the switch platform."""
     coordinator: TPLinkRouterDataUpdateCoordinator = hass.data[DOMAIN][entry.entry_id]
@@ -106,7 +108,10 @@ async def async_setup_entry(hass, entry, async_add_entities):
 
     async_add_entities(entities)
 
-class TPLinkWifiSwitch(CoordinatorEntity[TPLinkRouterDataUpdateCoordinator], SwitchEntity):
+
+class TPLinkWifiSwitch(
+    CoordinatorEntity[TPLinkRouterDataUpdateCoordinator], SwitchEntity
+):
     """Representation of a TP-Link Router Wi-Fi switch."""
 
     _attr_has_entity_name = True
@@ -124,16 +129,27 @@ class TPLinkWifiSwitch(CoordinatorEntity[TPLinkRouterDataUpdateCoordinator], Swi
         """Return true if switch is on."""
         if not self.coordinator.data or not self.coordinator.data.get("status"):
             return False
-        return getattr(self.coordinator.data["status"], self.entity_description.property_name, False)
+        return getattr(
+            self.coordinator.data["status"],
+            self.entity_description.property_name,
+            False,
+        )
 
     async def async_turn_on(self, **kwargs: Any) -> None:
         """Turn the entity on."""
         try:
             await self.coordinator.api.login()
-            await self.coordinator.api.set_wifi(self.entity_description.wifi_connection, True)
+            await self.coordinator.api.set_wifi(
+                self.entity_description.wifi_connection, True
+            )
             await self.coordinator.api.logout()
         except Exception as err:
-            _LOGGER.error("%s: Failed to turn on %s: %s", self._entry.title, self.entity_description.key, err)
+            _LOGGER.error(
+                "%s: Failed to turn on %s: %s",
+                self._entry.title,
+                self.entity_description.key,
+                err,
+            )
             raise
 
         await self.coordinator.async_request_refresh()
@@ -142,10 +158,17 @@ class TPLinkWifiSwitch(CoordinatorEntity[TPLinkRouterDataUpdateCoordinator], Swi
         """Turn the entity off."""
         try:
             await self.coordinator.api.login()
-            await self.coordinator.api.set_wifi(self.entity_description.wifi_connection, False)
+            await self.coordinator.api.set_wifi(
+                self.entity_description.wifi_connection, False
+            )
             await self.coordinator.api.logout()
         except Exception as err:
-            _LOGGER.error("%s: Failed to turn off %s: %s", self._entry.title, self.entity_description.key, err)
+            _LOGGER.error(
+                "%s: Failed to turn off %s: %s",
+                self._entry.title,
+                self.entity_description.key,
+                err,
+            )
             raise
 
         await self.coordinator.async_request_refresh()
@@ -156,7 +179,11 @@ class TPLinkWifiSwitch(CoordinatorEntity[TPLinkRouterDataUpdateCoordinator], Swi
         host = self._entry.options[CONF_HOST]
         group = self.entity_description.group
 
-        main_identifiers = {(DOMAIN, self.coordinator.mac)} if self.coordinator.mac else {(DOMAIN, f"host_{host}")}
+        main_identifiers = (
+            {(DOMAIN, self.coordinator.mac)}
+            if self.coordinator.mac
+            else {(DOMAIN, f"host_{host}")}
+        )
         sub_id_prefix = self.coordinator.mac if self.coordinator.mac else f"host_{host}"
         identifiers_list = list(main_identifiers)
         via_device = identifiers_list[0] if identifiers_list else (DOMAIN, host)
@@ -168,7 +195,10 @@ class TPLinkWifiSwitch(CoordinatorEntity[TPLinkRouterDataUpdateCoordinator], Swi
             "via_device": via_device,
         }
 
-class TPLinkPausePollingSwitch(CoordinatorEntity[TPLinkRouterDataUpdateCoordinator], SwitchEntity):
+
+class TPLinkPausePollingSwitch(
+    CoordinatorEntity[TPLinkRouterDataUpdateCoordinator], SwitchEntity
+):
     """Representation of a switch to pause/resume polling."""
 
     _attr_has_entity_name = True
@@ -208,12 +238,18 @@ class TPLinkPausePollingSwitch(CoordinatorEntity[TPLinkRouterDataUpdateCoordinat
     def device_info(self):
         """Return device information linking to the main router device."""
         host = self._entry.options[CONF_HOST]
-        main_identifiers = {(DOMAIN, self.coordinator.mac)} if self.coordinator.mac else {(DOMAIN, f"host_{host}")}
+        main_identifiers = (
+            {(DOMAIN, self.coordinator.mac)}
+            if self.coordinator.mac
+            else {(DOMAIN, f"host_{host}")}
+        )
 
         return {
             "identifiers": main_identifiers,
             "name": self._entry.title,
             "manufacturer": "TP-Link",
-            "model": self.coordinator.firmware.model if self.coordinator.firmware else "TP-Link Router",
+            "model": self.coordinator.firmware.model
+            if self.coordinator.firmware
+            else "TP-Link Router",
             "configuration_url": f"http://{host}",
         }

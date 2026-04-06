@@ -18,11 +18,13 @@ from .coordinator import TPLinkRouterDataUpdateCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 
+
 @dataclass(frozen=True, kw_only=True)
 class TPLinkButtonEntityDescription(ButtonEntityDescription):
     """Describes TP-Link button entity."""
 
     group: str = "main"
+
 
 BUTTON_TYPES = (
     TPLinkButtonEntityDescription(
@@ -34,6 +36,7 @@ BUTTON_TYPES = (
     ),
 )
 
+
 async def async_setup_entry(hass, entry, async_add_entities):
     """Set up the button platform."""
     coordinator: TPLinkRouterDataUpdateCoordinator = hass.data[DOMAIN][entry.entry_id]
@@ -44,7 +47,10 @@ async def async_setup_entry(hass, entry, async_add_entities):
 
     async_add_entities(entities)
 
-class TPLinkRebootButton(CoordinatorEntity[TPLinkRouterDataUpdateCoordinator], ButtonEntity):
+
+class TPLinkRebootButton(
+    CoordinatorEntity[TPLinkRouterDataUpdateCoordinator], ButtonEntity
+):
     """Representation of a TP-Link Router reboot button."""
 
     _attr_has_entity_name = True
@@ -68,12 +74,18 @@ class TPLinkRebootButton(CoordinatorEntity[TPLinkRouterDataUpdateCoordinator], B
     def device_info(self):
         """Return device information linking to the main router device."""
         host = self._entry.options[CONF_HOST]
-        main_identifiers = {(DOMAIN, self.coordinator.mac)} if self.coordinator.mac else {(DOMAIN, f"host_{host}")}
+        main_identifiers = (
+            {(DOMAIN, self.coordinator.mac)}
+            if self.coordinator.mac
+            else {(DOMAIN, f"host_{host}")}
+        )
 
         return {
             "identifiers": main_identifiers,
             "name": self._entry.title,
             "manufacturer": "TP-Link",
-            "model": self.coordinator.firmware.model if self.coordinator.firmware else "TP-Link Router",
+            "model": self.coordinator.firmware.model
+            if self.coordinator.firmware
+            else "TP-Link Router",
             "configuration_url": f"http://{host}",
         }
