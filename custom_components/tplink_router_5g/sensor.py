@@ -345,7 +345,7 @@ EXTRA_LTE_SENSOR_TYPES: Final[tuple[TPLinkSensorEntityDescription, ...]] = (
         name="5G Bandwidth",
         icon="mdi:arrow-expand-horizontal",
         sensor_type="extra_lte_status",
-        value_fn=lambda data: f"{data['extra_lte_status'].get('nr_dl_bw')}MHz" if data["extra_lte_status"].get('nr_dl_bw') else None,
+        value_fn=lambda data: data["extra_lte_status"].get("nr_dl_bw"),
     ),
     TPLinkSensorEntityDescription(
         key="nr_cqi",
@@ -447,7 +447,7 @@ EXTRA_LTE_SENSOR_TYPES: Final[tuple[TPLinkSensorEntityDescription, ...]] = (
         name="LTE Anchor Bandwidth",
         icon="mdi:arrow-expand-horizontal",
         sensor_type="extra_lte_status",
-        value_fn=lambda data: f"{data['extra_lte_status'].get('lte_dl_bw')}MHz" if data["extra_lte_status"].get('lte_dl_bw') else None,
+        value_fn=lambda data: data["extra_lte_status"].get("lte_dl_bw"),
     ),
     TPLinkSensorEntityDescription(
         key="lte_anchor_pci",
@@ -494,8 +494,6 @@ class TPLinkRouterSensor(CoordinatorEntity[TPLinkRouterDataUpdateCoordinator], S
             return None
         
         key = self.entity_description.key
-        
-        # Special case: Last Updated
         if key == "last_updated":
             return self.coordinator.last_update_success_time
 
@@ -509,7 +507,6 @@ class TPLinkRouterSensor(CoordinatorEntity[TPLinkRouterDataUpdateCoordinator], S
         """Return device information with sub-device support."""
         host = self._entry.options[CONF_HOST]
         group = self.entity_description.group
-        
         main_identifiers = {(DOMAIN, self.coordinator.mac)} if self.coordinator.mac else {(DOMAIN, host)}
         
         if group == "main":
@@ -525,22 +522,13 @@ class TPLinkRouterSensor(CoordinatorEntity[TPLinkRouterDataUpdateCoordinator], S
                 "configuration_url": f"http://{host}",
             }
             
-        # Sub-device naming logic
-        group_names = {
-            "sms": "SMS",
-            "wifi": "Wi-Fi",
-            "data": "Data",
-            "clients": "Clients",
-        }
+        group_names = {"sms": "SMS", "wifi": "Wi-Fi", "data": "Data", "clients": "Clients"}
         display_group = group_names.get(group, group.capitalize())
-        sub_name = f"{self._entry.title} {display_group}"
-        
-        # Consistent sub-device identifier using host/mac as prefix
         sub_id_prefix = self.coordinator.mac if self.coordinator.mac else host
         
         return {
             "identifiers": {(DOMAIN, f"{sub_id_prefix}_{group}")},
-            "name": sub_name,
+            "name": f"{self._entry.title} {display_group}",
             "manufacturer": "TP-Link",
             "via_device": list(main_identifiers)[0],
         }

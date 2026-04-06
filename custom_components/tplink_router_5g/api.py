@@ -127,10 +127,8 @@ class TPLinkRouter5GAPI:
                 extra["usage_limit"] = values[1].get("limitation")
                 extra["payment_day"] = values[1].get("paymentDay")
             if len(values) > 2 and values[2]:
-                # Decode SMS result
                 res_code = _safe_int(values[2].get("smsSendResult"), 3)
                 extra["sms_send_result"] = {0:"Success", 1:"Fail", 2:"Sending", 3:"Idle"}.get(res_code, f"Unknown ({res_code})")
-                # Decode SMS cause
                 cause_code = _safe_int(values[2].get("smsSendCause"), 0)
                 extra["sms_send_cause"] = "None" if cause_code == 0 else f"Error {cause_code}"
 
@@ -158,8 +156,11 @@ class TPLinkRouter5GAPI:
                         elif k == 'ARFCN': extra[f"{prefix}arfcn"] = v
                         elif k == 'downlinkModType': extra[f"{prefix}dl_mod"] = v
                         elif k == 'uplinkModType': extra[f"{prefix}ul_mod"] = v
-                        elif k == 'dlBandwidth': extra[f"{prefix}dl_bw"] = v
-                        elif k == 'ulBandwidth': extra[f"{prefix}ul_bw"] = v
+                        elif k == 'downBandWidth': # Values are in KHz, convert to MHz string
+                            try:
+                                extra[f"{prefix}dl_bw"] = f"{int(float(v)) // 1000}MHz"
+                            except:
+                                extra[f"{prefix}dl_bw"] = v
                         elif k == 'CQI': extra[f"{prefix}cqi"] = v
                         elif k == 'txPowerPUCCH': extra[f"{prefix}tx_power"] = v
                         elif k == 'numRbs': extra[f"{prefix}rbs"] = v
