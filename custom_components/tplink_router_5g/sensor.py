@@ -141,6 +141,22 @@ SENSOR_TYPES: Final[tuple[TPLinkSensorEntityDescription, ...]] = (
         sensor_type="lte_status",
         value_fn=lambda data: data["lte_status"].network_type_info if data["lte_status"] else None,
     ),
+    TPLinkSensorEntityDescription(
+        key="registration_status",
+        name="Registration Status",
+        icon="mdi:tower-fire",
+        sensor_type="extra_lte_status",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=lambda data: data["extra_lte_status"].get("registration_status"),
+    ),
+    TPLinkSensorEntityDescription(
+        key="service_status",
+        name="Service Status",
+        icon="mdi:cellphone-basic",
+        sensor_type="extra_lte_status",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=lambda data: data["extra_lte_status"].get("service_status"),
+    ),
 
     # --- Data Sub-device ---
     TPLinkSensorEntityDescription(
@@ -153,6 +169,17 @@ SENSOR_TYPES: Final[tuple[TPLinkSensorEntityDescription, ...]] = (
         sensor_type="extra_lte_status",
         group="data",
         value_fn=lambda data: data["extra_lte_status"].get("daily_usage"),
+    ),
+    TPLinkSensorEntityDescription(
+        key="data_remaining",
+        name="Data Remaining",
+        icon="mdi:gauge-low",
+        state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement=UnitOfInformation.BYTES,
+        device_class=SensorDeviceClass.DATA_SIZE,
+        sensor_type="extra_lte_status",
+        group="data",
+        value_fn=lambda data: data["extra_lte_status"].get("data_left"),
     ),
     TPLinkSensorEntityDescription(
         key="usage_limit",
@@ -320,6 +347,15 @@ EXTRA_LTE_SENSOR_TYPES: Final[tuple[TPLinkSensorEntityDescription, ...]] = (
         value_fn=lambda data: 0.1 * int(data["extra_lte_status"].get("nr_snr")) if data["extra_lte_status"].get("nr_snr") else None,
     ),
     TPLinkSensorEntityDescription(
+        key="nr_signal_pct",
+        name="5G Signal Strength",
+        icon="mdi:signal",
+        state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement=PERCENTAGE,
+        sensor_type="extra_lte_status",
+        value_fn=lambda data: data["extra_lte_status"].get("nr_signal_pct"),
+    ),
+    TPLinkSensorEntityDescription(
         key="nr_band",
         name="5G Band",
         icon="mdi:radio-tower",
@@ -341,11 +377,39 @@ EXTRA_LTE_SENSOR_TYPES: Final[tuple[TPLinkSensorEntityDescription, ...]] = (
         value_fn=lambda data: data["extra_lte_status"].get("nr_ul_mod"),
     ),
     TPLinkSensorEntityDescription(
+        key="nr_dl_mcs",
+        name="5G DL MCS",
+        icon="mdi:numeric",
+        state_class=SensorStateClass.MEASUREMENT,
+        sensor_type="extra_lte_status",
+        value_fn=lambda data: data["extra_lte_status"].get("nr_dl_mcs"),
+    ),
+    TPLinkSensorEntityDescription(
+        key="nr_ul_mcs",
+        name="5G UL MCS",
+        icon="mdi:numeric",
+        state_class=SensorStateClass.MEASUREMENT,
+        sensor_type="extra_lte_status",
+        value_fn=lambda data: data["extra_lte_status"].get("nr_ul_mcs"),
+    ),
+    TPLinkSensorEntityDescription(
         key="nr_bw",
         name="5G Bandwidth",
         icon="mdi:arrow-expand-horizontal",
+        state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement="MHz",
         sensor_type="extra_lte_status",
         value_fn=lambda data: data["extra_lte_status"].get("nr_dl_bw"),
+    ),
+    TPLinkSensorEntityDescription(
+        key="nr_dl_freq",
+        name="5G Downlink Frequency",
+        icon="mdi:waveform",
+        state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement="MHz",
+        sensor_type="extra_lte_status",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=lambda data: data["extra_lte_status"].get("nr_dl_freq"),
     ),
     TPLinkSensorEntityDescription(
         key="nr_cqi",
@@ -436,6 +500,15 @@ EXTRA_LTE_SENSOR_TYPES: Final[tuple[TPLinkSensorEntityDescription, ...]] = (
         value_fn=lambda data: data["extra_lte_status"].get("lte_rsrq"),
     ),
     TPLinkSensorEntityDescription(
+        key="lte_anchor_signal_pct",
+        name="LTE Anchor Signal Strength",
+        icon="mdi:signal",
+        state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement=PERCENTAGE,
+        sensor_type="extra_lte_status",
+        value_fn=lambda data: data["extra_lte_status"].get("lte_signal_pct"),
+    ),
+    TPLinkSensorEntityDescription(
         key="lte_anchor_band",
         name="LTE Anchor Band",
         icon="mdi:radio-tower",
@@ -446,8 +519,28 @@ EXTRA_LTE_SENSOR_TYPES: Final[tuple[TPLinkSensorEntityDescription, ...]] = (
         key="lte_anchor_bw",
         name="LTE Anchor Bandwidth",
         icon="mdi:arrow-expand-horizontal",
+        state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement="MHz",
         sensor_type="extra_lte_status",
         value_fn=lambda data: data["extra_lte_status"].get("lte_dl_bw"),
+    ),
+    TPLinkSensorEntityDescription(
+        key="lte_anchor_dl_freq",
+        name="LTE Downlink Frequency",
+        icon="mdi:waveform",
+        state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement="MHz",
+        sensor_type="extra_lte_status",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=lambda data: data["extra_lte_status"].get("lte_dl_freq"),
+    ),
+    TPLinkSensorEntityDescription(
+        key="lte_anchor_dl_mcs",
+        name="LTE DL MCS",
+        icon="mdi:numeric",
+        state_class=SensorStateClass.MEASUREMENT,
+        sensor_type="extra_lte_status",
+        value_fn=lambda data: data["extra_lte_status"].get("lte_dl_mcs"),
     ),
     TPLinkSensorEntityDescription(
         key="lte_anchor_pci",
@@ -456,6 +549,30 @@ EXTRA_LTE_SENSOR_TYPES: Final[tuple[TPLinkSensorEntityDescription, ...]] = (
         sensor_type="extra_lte_status",
         entity_category=EntityCategory.DIAGNOSTIC,
         value_fn=lambda data: data["extra_lte_status"].get("lte_pci"),
+    ),
+    TPLinkSensorEntityDescription(
+        key="lte_anchor_tac",
+        name="LTE Anchor TAC",
+        icon="mdi:transmission-tower",
+        sensor_type="extra_lte_status",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=lambda data: data["extra_lte_status"].get("lte_tac"),
+    ),
+    TPLinkSensorEntityDescription(
+        key="lte_anchor_cid",
+        name="LTE Anchor Cell ID",
+        icon="mdi:transmission-tower",
+        sensor_type="extra_lte_status",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=lambda data: data["extra_lte_status"].get("lte_cid"),
+    ),
+    TPLinkSensorEntityDescription(
+        key="lte_anchor_node_b_id",
+        name="LTE Anchor NodeB ID",
+        icon="mdi:transmission-tower",
+        sensor_type="extra_lte_status",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=lambda data: data["extra_lte_status"].get("lte_node_b_id"),
     ),
 )
 
@@ -524,6 +641,7 @@ class TPLinkRouterSensor(CoordinatorEntity[TPLinkRouterDataUpdateCoordinator], S
             
         group_names = {"sms": "SMS", "wifi": "Wi-Fi", "data": "Data", "clients": "Clients"}
         display_group = group_names.get(group, group.capitalize())
+        sub_name = f"{self._entry.title} {display_group}"
         sub_id_prefix = self.coordinator.mac if self.coordinator.mac else host
         
         return {

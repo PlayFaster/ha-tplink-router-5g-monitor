@@ -79,7 +79,7 @@ class TPLinkRouter5GAPI:
                 # 1: Data Usage
                 ActItem(ActItem.GET, 'DEV2_XTP_LTE_INTF_CFG', '1,0,0,0,0,0', attrs=['totalStatistics', 'curRxSpeed', 'curTxSpeed', 'dailyFlow', 'limitation', 'paymentDay']),
                 # 2: Net Status
-                ActItem(ActItem.GET, 'DEV2_LTE_NET_STATUS', '1,0,0,0,0,0', attrs=['smsUnreadCount', 'sigLevel', 'rfInfoRsrp', 'rfInfoRsrq', 'rfInfoSnr', 'smsSendResult', 'smsSendCause']),
+                ActItem(ActItem.GET, 'DEV2_LTE_NET_STATUS', '1,0,0,0,0,0', attrs=['smsUnreadCount', 'sigLevel', 'rfInfoRsrp', 'rfInfoRsrq', 'rfInfoSnr', 'smsSendResult', 'smsSendCause', 'regStat', 'srvStat']),
                 # 3: ISP
                 ActItem(ActItem.GET, 'DEV2_LTE_PROF_STAT', '1,0,0,0,0,0', attrs=['ispName']),
                 # 4: Cells (5G Metrics)
@@ -123,14 +123,23 @@ class TPLinkRouter5GAPI:
                 extra["roaming"] = values[0].get("roamingStatus")
                 extra["endc_support"] = values[0].get("endcStatus")
             if len(values) > 1 and values[1]:
-                extra["daily_usage"] = values[1].get("dailyFlow")
-                extra["usage_limit"] = values[1].get("limitation")
+                limit = _safe_int(values[1].get("limitation"))
+                usage = _safe_int(values[1].get("dailyFlow"))
+                extra["daily_usage"] = usage
+                extra["usage_limit"] = limit
                 extra["payment_day"] = values[1].get("paymentDay")
+                if limit > 0:
+                    extra["data_left"] = max(0, limit - usage)
             if len(values) > 2 and values[2]:
                 res_code = _safe_int(values[2].get("smsSendResult"), 3)
                 extra["sms_send_result"] = {0:"Success", 1:"Fail", 2:"Sending", 3:"Idle"}.get(res_code, f"Unknown ({res_code})")
                 cause_code = _safe_int(values[2].get("smsSendCause"), 0)
                 extra["sms_send_cause"] = "None" if cause_code == 0 else f"Error {cause_code}"
+                
+                reg_code = _safe_int(values[2].get("regStat"))
+                extra["registration_status"] = {0:"Unregistered", 1:"Registered", 2:"Searching", 3:"Denied", 4:"Unknown", 5:"Roaming"}.get(reg_code, f"Code {reg_code}")
+                srv_code = _safe_int(values[2].get("srvStat"))
+                extra["service_status"] = {0:"No Service", 1:"Limited", 2:"Full", 3:"Unknown"}.get(srv_code, f"Code {srv_code}")
 
             if len(values) > 4 and isinstance(values[4], list):
                 for cell in values[4]:
@@ -139,31 +148,43 @@ class TPLinkRouter5GAPI:
                     net_type = cell.get('networkType')
                     prefix = "nr_" if net_type == '8' else "lte_"
                     for k, v in cell.items():
+                        # Return RAW numeric values for technical metrics
                         if net_type == '8':
-                            if k == 'SSRSRP': extra[f"{prefix}rsrp"] = v
-                            elif k == 'SSRSRQ': extra[f"{prefix}rsrq"] = v
-                            elif k == 'SSSINR': extra[f"{prefix}snr"] = v
+                            if k == 'SSRSRP': extra[f"{prefix}rsrp"] = _safe_int(v)
+                            elif k == 'SSRSRQ': extra[f"{prefix}rsrq"] = _safe_int(v)
+                            elif k == 'SSSINR': extra[f"{prefix}snr"] = _safe_int(v)
                         else:
-                            if k == 'RSRP': extra[f"{prefix}rsrp"] = v
-                            elif k == 'RSRQ': extra[f"{prefix}rsrq"] = v
-                            elif k == 'SNR': extra[f"{prefix}snr"] = v
+                            if k == 'RSRP': extra[f"{prefix}rsrp"] = _safe_int(v)
+                            elif k == 'RSRQ': extra[f"{prefix}rsrq"] = _safe_int(v)
+                            elif k == 'SNR': extra[f"{prefix}snr"] = _safe_int(v)
                         
                         if k == 'band': extra[f"{prefix}band"] = v
-                        elif k == 'RSSI': extra[f"{prefix}rssi"] = v
+                        elif k == 'RSSI': extra[f"{prefix}rssi"] = _safe_int(v)
                         elif k == 'PCI': extra[f"{prefix}pci"] = v
                         elif k == 'TAC': extra[f"{prefix}tac"] = v
                         elif k == 'cid': extra[f"{prefix}cid"] = v
                         elif k == 'ARFCN': extra[f"{prefix}arfcn"] = v
                         elif k == 'downlinkModType': extra[f"{prefix}dl_mod"] = v
                         elif k == 'uplinkModType': extra[f"{prefix}ul_mod"] = v
-                        elif k == 'downBandWidth': # Values are in KHz, convert to MHz string
-                            try:
-                                extra[f"{prefix}dl_bw"] = f"{int(float(v)) // 1000}MHz"
-                            except:
-                                extra[f"{prefix}dl_bw"] = v
-                        elif k == 'CQI': extra[f"{prefix}cqi"] = v
-                        elif k == 'txPowerPUCCH': extra[f"{prefix}tx_power"] = v
-                        elif k == 'numRbs': extra[f"{prefix}rbs"] = v
+                        elif k == 'downBandWidth':
+                            # Convert KHz to MHz as number
+                            extra[f"{prefix}dl_bw"] = _safe_int(v) // 1000
+                        elif k == 'upBandWidth':
+                            extra[f"{prefix}ul_bw"] = _safe_int(v) // 1000
+                        elif k == 'downFreq': extra[f"{prefix}dl_freq"] = _safe_int(v)
+                        elif k == 'upFreq': extra[f"{prefix}ul_freq"] = _safe_int(v)
+                        elif k == 'downMCS': extra[f"{prefix}dl_mcs"] = _safe_int(v)
+                        elif k == 'upMCS': extra[f"{prefix}ul_mcs"] = _safe_int(v)
+                        elif k == 'CQI': extra[f"{prefix}cqi"] = _safe_int(v)
+                        elif k == 'RI': extra[f"{prefix}ri"] = _safe_int(v)
+                        elif k == 'PMI': extra[f"{prefix}pmi"] = _safe_int(v)
+                        elif k == 'tbSize': extra[f"{prefix}tbs"] = _safe_int(v)
+                        elif k == 'txPowerPUCCH': extra[f"{prefix}tx_power"] = _safe_int(v)
+                        elif k == 'numRbs': extra[f"{prefix}rbs"] = _safe_int(v)
+                        elif k == 'nodeBId': extra[f"{prefix}node_b_id"] = v
+                        elif k == 'CGI': extra[f"{prefix}cgi"] = v
+                        elif k == 'signalStrength':
+                            extra[f"{prefix}signal_pct"] = _safe_int(v) * 25
 
         return lte_status, extra
 
