@@ -1,23 +1,19 @@
 """Switch platform for TP-Link Router 5G."""
 
 import logging
+from dataclasses import dataclass
 from typing import Any, Final
 
-from homeassistant.components.switch import (
-    SwitchEntity,
-    SwitchEntityDescription,
-)
-from homeassistant.const import (
-    CONF_HOST,
-)
+from homeassistant.components.switch import SwitchEntity, SwitchEntityDescription
+from homeassistant.const import CONF_HOST
+from homeassistant.helpers.device_registry import CONNECTION_NETWORK_MAC
+from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import CONF_STOP_POLLING, DOMAIN
 from .coordinator import TPLinkRouterDataUpdateCoordinator
 
 _LOGGER = logging.getLogger(__name__)
-
-from dataclasses import dataclass
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -130,9 +126,7 @@ class TPLinkWifiSwitch(
         if not self.coordinator.data or not self.coordinator.data.get("status"):
             return False
         return getattr(
-            self.coordinator.data["status"],
-            self.entity_description.property_name,
-            False,
+            self.coordinator.data["status"], self.entity_description.property_name, False
         )
 
     async def async_turn_on(self, **kwargs: Any) -> None:
@@ -179,12 +173,13 @@ class TPLinkWifiSwitch(
         host = self._entry.options[CONF_HOST]
         group = self.entity_description.group
 
-        main_identifiers = (
-            {(DOMAIN, self.coordinator.mac)}
-            if self.coordinator.mac
-            else {(DOMAIN, f"host_{host}")}
-        )
-        sub_id_prefix = self.coordinator.mac if self.coordinator.mac else f"host_{host}"
+        if self.coordinator.mac:
+            main_identifiers = {(DOMAIN, self.coordinator.mac)}
+            sub_id_prefix = self.coordinator.mac
+        else:
+            main_identifiers = {(DOMAIN, f"host_{host}")}
+            sub_id_prefix = f"host_{host}"
+
         identifiers_list = list(main_identifiers)
         via_device = identifiers_list[0] if identifiers_list else (DOMAIN, host)
 
@@ -203,6 +198,7 @@ class TPLinkPausePollingSwitch(
 
     _attr_has_entity_name = True
     _attr_should_poll = False
+    _attr_entity_category = EntityCategory.CONFIG
 
     def __init__(self, coordinator, entry):
         """Initialize the switch."""
@@ -238,18 +234,21 @@ class TPLinkPausePollingSwitch(
     def device_info(self):
         """Return device information linking to the main router device."""
         host = self._entry.options[CONF_HOST]
-        main_identifiers = (
-            {(DOMAIN, self.coordinator.mac)}
-            if self.coordinator.mac
-            else {(DOMAIN, f"host_{host}")}
+        if self.coordinator.mac:
+            main_identifiers = {(DOMAIN, self.coordinator.mac)}
+        else:
+            main_identifiers = {(DOMAIN, f"host_{host}")}
+
+        model = (
+            self.coordinator.firmware.model
+            if self.coordinator.firmware
+            else "TP-Link Router"
         )
 
         return {
             "identifiers": main_identifiers,
             "name": self._entry.title,
             "manufacturer": "TP-Link",
-            "model": self.coordinator.firmware.model
-            if self.coordinator.firmware
-            else "TP-Link Router",
+            "model": model,
             "configuration_url": f"http://{host}",
         }

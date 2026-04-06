@@ -34,7 +34,11 @@ def mock_api():
     api.login = AsyncMock()
     api.logout = AsyncMock()
     api.get_status = AsyncMock()
-    api.get_lte_status = AsyncMock()
-    api.get_extra_lte_status = AsyncMock()
+    api.get_lte_and_extra_status = AsyncMock(return_value=(MagicMock(), {}))
+    api.get_ipv4_status = AsyncMock()
+    api.get_vpn_status = AsyncMock()
     api.get_firmware = AsyncMock()
+    api.send_sms = AsyncMock()
+    api.reboot = AsyncMock()
+    api.set_wifi = AsyncMock()
     return api

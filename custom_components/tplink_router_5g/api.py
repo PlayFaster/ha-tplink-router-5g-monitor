@@ -1,9 +1,9 @@
 """TP-Link Router 5G API client."""
 
-import asyncio
 import logging
-
-from tplinkrouterc6u import LTEStatus, TplinkRouterProvider
+import asyncio
+import re
+from tplinkrouterc6u import TplinkRouterProvider, LTEStatus
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -16,6 +16,29 @@ def _safe_int(value, default=0):
         return int(float(value))
     except (ValueError, TypeError):
         return default
+
+
+def _parse_uptime_to_seconds(uptime_str):
+    """Convert 'X days HH:MM:SS' or 'HH:MM:SS' to total seconds.
+
+    Returns None if parsing fails.
+    """
+    if not uptime_str or not isinstance(uptime_str, str):
+        return None
+    try:
+        # Regex to handle both 'X days HH:MM:SS' and 'HH:MM:SS'
+        match = re.search(r"(?:(\d+)\s+days?,\s+)?(\d+):(\d+):(\d+)", uptime_str)
+        if match:
+            days = int(match.group(1)) if match.group(1) else 0
+            hours = int(match.group(2))
+            minutes = int(match.group(3))
+            seconds = int(match.group(4))
+            return days * 86400 + hours * 3600 + minutes * 60 + seconds
+    except (AttributeError, ValueError, IndexError) as err:
+        _LOGGER.debug("Failed to parse uptime '%s': %s", uptime_str, err)
+    except Exception as err:
+        _LOGGER.error("Unexpected error parsing uptime: %s", err)
+    return None
 
 
 class TPLinkRouter5GAPI:
@@ -67,9 +90,23 @@ class TPLinkRouter5GAPI:
         return await asyncio.to_thread(self.client.get_firmware)
 
     async def get_status(self):
-        """Get basic status."""
+        """Get basic status including system uptime."""
         await self._ensure_client()
-        return await asyncio.to_thread(self.client.get_status)
+        status = await asyncio.to_thread(self.client.get_status)
+
+        # Probe for formatted system uptime (seen in GUI)
+        if status:
+            try:
+                act_item = self.client.ActItem
+                act = act_item(
+                    act_item.GET, "DEV2_SYS_STATUS", "0,0,0,0,0,0", attrs=["upTime"]
+                )
+                _, values = await asyncio.to_thread(self.client.req_act, [act])
+                if values and values[0] and values[0].get("upTime"):
+                    status.uptime = _parse_uptime_to_seconds(values[0]["upTime"])
+            except (KeyError, IndexError, TypeError, ValueError, AttributeError):
+                pass
+        return status
 
     async def send_sms(self, number: str, text: str) -> None:
         """Send an SMS message through the router."""
@@ -82,20 +119,20 @@ class TPLinkRouter5GAPI:
     async def get_lte_and_extra_status(self):
         """Fetch all LTE/5G and extra metrics in a single session."""
         await self._ensure_client()
-        if not hasattr(self.client, "req_act") or not hasattr(self.client, "ActItem"):
-            lte = (
-                await asyncio.to_thread(self.client.get_lte_status)
-                if hasattr(self.client, "get_lte_status")
-                else None
-            )
+        lte = None
+        if not hasattr(self.client, "req_act") or not hasattr(
+            self.client, "ActItem"
+        ):
+            if hasattr(self.client, "get_lte_status"):
+                lte = await asyncio.to_thread(self.client.get_lte_status)
             return lte, {}
 
         def fetch_all():
-            ActItem = self.client.ActItem
+            act_item = self.client.ActItem
             acts = [
                 # 0: Link Config
-                ActItem(
-                    ActItem.GET,
+                act_item(
+                    act_item.GET,
                     "DEV2_LTE_LINK_CFG",
                     "1,0,0,0,0,0",
                     attrs=[
@@ -108,8 +145,8 @@ class TPLinkRouter5GAPI:
                     ],
                 ),
                 # 1: Data Usage
-                ActItem(
-                    ActItem.GET,
+                act_item(
+                    act_item.GET,
                     "DEV2_XTP_LTE_INTF_CFG",
                     "1,0,0,0,0,0",
                     attrs=[
@@ -122,8 +159,8 @@ class TPLinkRouter5GAPI:
                     ],
                 ),
                 # 2: Net Status
-                ActItem(
-                    ActItem.GET,
+                act_item(
+                    act_item.GET,
                     "DEV2_LTE_NET_STATUS",
                     "1,0,0,0,0,0",
                     attrs=[
@@ -139,12 +176,18 @@ class TPLinkRouter5GAPI:
                     ],
                 ),
                 # 3: ISP
-                ActItem(
-                    ActItem.GET, "DEV2_LTE_PROF_STAT", "1,0,0,0,0,0", attrs=["ispName"]
+                act_item(
+                    act_item.GET,
+                    "DEV2_LTE_PROF_STAT",
+                    "1,0,0,0,0,0",
+                    attrs=["ispName"],
                 ),
                 # 4: Cells (5G Metrics)
-                ActItem(
-                    ActItem.GL, "DEV2_LTE_SERVING_CELL_INFO", "0,0,0,0,0,0", attrs=[]
+                act_item(
+                    act_item.GL,
+                    "DEV2_LTE_SERVING_CELL_INFO",
+                    "0,0,0,0,0,0",
+                    attrs=[],
                 ),
             ]
             _, values = self.client.req_act(acts)
@@ -192,30 +235,34 @@ class TPLinkRouter5GAPI:
                         extra["data_left"] = max(0, limit - usage)
                 if len(values) > 2 and values[2]:
                     res_code = _safe_int(values[2].get("smsSendResult"), 3)
-                    extra["sms_send_result"] = {
-                        0: "Success",
-                        1: "Fail",
-                        2: "Sending",
-                        3: "Idle",
-                    }.get(res_code, f"Unknown ({res_code})")
+                    sms_result_map = {0: "Success", 1: "Fail", 2: "Sending", 3: "Idle"}
+                    extra["sms_send_result"] = sms_result_map.get(
+                        res_code, f"Unknown ({res_code})"
+                    )
                     cause_code = _safe_int(values[2].get("smsSendCause"), 0)
                     extra["sms_send_cause"] = (
                         "None" if cause_code == 0 else f"Error {cause_code}"
                     )
-                    extra["registration_status"] = {
+                    reg_map = {
                         0: "Unregistered",
                         1: "Registered",
                         2: "Searching",
                         3: "Denied",
                         4: "Unknown",
                         5: "Roaming",
-                    }.get(_safe_int(values[2].get("regStat")), "Unknown")
-                    extra["service_status"] = {
+                    }
+                    extra["registration_status"] = reg_map.get(
+                        _safe_int(values[2].get("regStat")), "Unknown"
+                    )
+                    srv_map = {
                         0: "No Service",
                         1: "Limited",
                         2: "Full",
                         3: "Unknown",
-                    }.get(_safe_int(values[2].get("srvStat")), "Unknown")
+                    }
+                    extra["service_status"] = srv_map.get(
+                        _safe_int(values[2].get("srvStat")), "Unknown"
+                    )
 
                 if len(values) > 4 and isinstance(values[4], list):
                     for cell in values[4]:
@@ -244,13 +291,13 @@ class TPLinkRouter5GAPI:
                             elif k == "RSSI":
                                 extra[f"{prefix}rssi"] = _safe_int(v)
                             elif k == "PCI":
-                                extra[f"{prefix}pci"] = v
+                                extra[f"{prefix}pci"] = _safe_int(v)
                             elif k == "TAC":
-                                extra[f"{prefix}tac"] = v
+                                extra[f"{prefix}tac"] = _safe_int(v)
                             elif k == "cid":
-                                extra[f"{prefix}cid"] = v
+                                extra[f"{prefix}cid"] = _safe_int(v)
                             elif k == "ARFCN":
-                                extra[f"{prefix}arfcn"] = v
+                                extra[f"{prefix}arfcn"] = _safe_int(v)
                             elif k == "downlinkModType":
                                 extra[f"{prefix}dl_mod"] = v
                             elif k == "uplinkModType":
