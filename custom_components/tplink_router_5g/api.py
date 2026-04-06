@@ -21,7 +21,6 @@ def _parse_uptime_to_seconds(uptime_str):
     if not uptime_str or not isinstance(uptime_str, str):
         return None
     try:
-        # Regex to handle both 'X days HH:MM:SS' and 'HH:MM:SS'
         match = re.search(r'(?:(\d+)\s+days?,\s+)?(\d+):(\d+):(\d+)', uptime_str)
         if match:
             days = int(match.group(1)) if match.group(1) else 0
@@ -103,17 +102,11 @@ class TPLinkRouter5GAPI:
         def fetch_all():
             ActItem = self.client.ActItem
             acts = [
-                # 0: Link Config
                 ActItem(ActItem.GET, 'DEV2_LTE_LINK_CFG', '1,0,0,0,0,0', attrs=['enable', 'connectStatus', 'networkType', 'simStatus', 'roamingStatus', 'endcStatus']),
-                # 1: Data Usage
                 ActItem(ActItem.GET, 'DEV2_XTP_LTE_INTF_CFG', '1,0,0,0,0,0', attrs=['totalStatistics', 'curRxSpeed', 'curTxSpeed', 'dailyFlow', 'limitation', 'paymentDay']),
-                # 2: Net Status
                 ActItem(ActItem.GET, 'DEV2_LTE_NET_STATUS', '1,0,0,0,0,0', attrs=['smsUnreadCount', 'sigLevel', 'rfInfoRsrp', 'rfInfoRsrq', 'rfInfoSnr', 'smsSendResult', 'smsSendCause', 'regStat', 'srvStat']),
-                # 3: ISP
                 ActItem(ActItem.GET, 'DEV2_LTE_PROF_STAT', '1,0,0,0,0,0', attrs=['ispName']),
-                # 4: Cells (5G Metrics)
                 ActItem(ActItem.GL, 'DEV2_LTE_SERVING_CELL_INFO', '0,0,0,0,0,0', attrs=[]),
-                # 5: WAN Status (Internet Uptime)
                 ActItem(ActItem.GET, 'DEV2_WAN_IF_STATUS', '1,0,0,0,0,0', attrs=['upTime']),
             ]
             _, values = self.client.req_act(acts)
@@ -125,7 +118,7 @@ class TPLinkRouter5GAPI:
         extra = {}
         if values:
             try:
-                # Standard LTEStatus mapping
+                # Reconstruct LTEStatus
                 if len(values) > 0 and values[0]:
                     v0 = values[0]
                     lte_status.enable = _safe_int(v0.get('enable'))
