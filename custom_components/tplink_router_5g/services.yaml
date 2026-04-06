@@ -1,0 +1,13 @@
+send_sms:
+  description: Send an SMS message through the router.
+  fields:
+    number:
+      description: The phone number to send the message to.
+      required: true
+      selector:
+        text:
+    text:
+      description: The message text.
+      required: true
+      selector:
+        text:

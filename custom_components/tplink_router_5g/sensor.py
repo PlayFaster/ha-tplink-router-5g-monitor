@@ -63,6 +63,60 @@ SENSOR_TYPES: Final[tuple[TPLinkSensorEntityDescription, ...]] = (
         entity_category=EntityCategory.DIAGNOSTIC,
         value_fn=lambda data: data["lte_status"].isp_name if data["lte_status"] else None,
     ),
+    TPLinkSensorEntityDescription(
+        key="sim_status_info",
+        name="SIM Status Info",
+        icon="mdi:sim-outline",
+        sensor_type="lte_status",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=lambda data: data["lte_status"].sim_status_info if data["lte_status"] else None,
+    ),
+    TPLinkSensorEntityDescription(
+        key="lan_ipv4_addr",
+        name="LAN IPv4 Address",
+        icon="mdi:lan",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=lambda data: data["status"].lan_ipv4_addr,
+    ),
+    TPLinkSensorEntityDescription(
+        key="wan_ipv4_addr",
+        name="WAN IPv4 Address",
+        icon="mdi:wan",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=lambda data: data["status"].wan_ipv4_addr,
+    ),
+    TPLinkSensorEntityDescription(
+        key="wan_ipv4_gateway",
+        name="WAN Gateway",
+        icon="mdi:gateway",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=lambda data: data["status"].wan_ipv4_gateway,
+    ),
+    TPLinkSensorEntityDescription(
+        key="primary_dns",
+        name="Primary DNS",
+        icon="mdi:dns",
+        sensor_type="ipv4_status",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=lambda data: data["ipv4_status"].wan_ipv4_pridns if data["ipv4_status"] else None,
+    ),
+    TPLinkSensorEntityDescription(
+        key="secondary_dns",
+        name="Secondary DNS",
+        icon="mdi:dns",
+        sensor_type="ipv4_status",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=lambda data: data["ipv4_status"].wan_ipv4_snddns if data["ipv4_status"] else None,
+    ),
+    TPLinkSensorEntityDescription(
+        key="wan_uptime",
+        name="WAN Uptime",
+        icon="mdi:timer-outline",
+        device_class=SensorDeviceClass.DURATION,
+        native_unit_of_measurement="s",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=lambda data: data["status"].wan_ipv4_uptime,
+    ),
     
     # --- Main Device: Connection Metrics ---
     TPLinkSensorEntityDescription(
@@ -74,6 +128,36 @@ SENSOR_TYPES: Final[tuple[TPLinkSensorEntityDescription, ...]] = (
     ),
 
     # --- Data Sub-device ---
+    TPLinkSensorEntityDescription(
+        key="daily_usage",
+        name="Daily Data Usage",
+        icon="mdi:chart-timeline-variant",
+        state_class=SensorStateClass.TOTAL_INCREASING,
+        native_unit_of_measurement=UnitOfInformation.BYTES,
+        device_class=SensorDeviceClass.DATA_SIZE,
+        sensor_type="extra_lte_status",
+        group="data",
+        value_fn=lambda data: data["extra_lte_status"].get("daily_usage"),
+    ),
+    TPLinkSensorEntityDescription(
+        key="usage_limit",
+        name="Data Limit",
+        icon="mdi:gauge",
+        native_unit_of_measurement=UnitOfInformation.BYTES,
+        device_class=SensorDeviceClass.DATA_SIZE,
+        sensor_type="extra_lte_status",
+        group="data",
+        value_fn=lambda data: data["extra_lte_status"].get("usage_limit"),
+    ),
+    TPLinkSensorEntityDescription(
+        key="payment_day",
+        name="Data Reset Day",
+        icon="mdi:calendar-refresh",
+        sensor_type="extra_lte_status",
+        group="data",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=lambda data: data["extra_lte_status"].get("payment_day"),
+    ),
     TPLinkSensorEntityDescription(
         key="lte_total_statistics",
         name="Total Data Statistics",
@@ -116,6 +200,24 @@ SENSOR_TYPES: Final[tuple[TPLinkSensorEntityDescription, ...]] = (
         group="sms",
         value_fn=lambda data: data["lte_status"].sms_unread_count if data["lte_status"] else None,
     ),
+    TPLinkSensorEntityDescription(
+        key="sms_send_result",
+        name="Last SMS Send Result",
+        icon="mdi:email-check-outline",
+        sensor_type="extra_lte_status",
+        group="sms",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=lambda data: data["extra_lte_status"].get("sms_send_result"),
+    ),
+    TPLinkSensorEntityDescription(
+        key="sms_send_cause",
+        name="Last SMS Send Cause",
+        icon="mdi:email-alert-outline",
+        sensor_type="extra_lte_status",
+        group="sms",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=lambda data: data["extra_lte_status"].get("sms_send_cause"),
+    ),
 
     # --- Clients Sub-device ---
     TPLinkSensorEntityDescription(
@@ -145,15 +247,26 @@ SENSOR_TYPES: Final[tuple[TPLinkSensorEntityDescription, ...]] = (
 )
 
 EXTRA_LTE_SENSOR_TYPES: Final[tuple[TPLinkSensorEntityDescription, ...]] = (
-    # --- Main Device: 5G Metrics ---
+    # --- 5G Metrics ---
     TPLinkSensorEntityDescription(
         key="nr_rsrp",
         name="5G RSRP",
         icon="mdi:signal-cellular-3",
         state_class=SensorStateClass.MEASUREMENT,
         native_unit_of_measurement=SIGNAL_STRENGTH_DECIBELS_MILLIWATT,
+        device_class=SensorDeviceClass.SIGNAL_STRENGTH,
         sensor_type="extra_lte_status",
         value_fn=lambda data: data["extra_lte_status"].get("nr_rsrp"),
+    ),
+    TPLinkSensorEntityDescription(
+        key="nr_rssi",
+        name="5G RSSI",
+        icon="mdi:signal-cellular-3",
+        state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement=SIGNAL_STRENGTH_DECIBELS_MILLIWATT,
+        device_class=SensorDeviceClass.SIGNAL_STRENGTH,
+        sensor_type="extra_lte_status",
+        value_fn=lambda data: data["extra_lte_status"].get("nr_rssi"),
     ),
     TPLinkSensorEntityDescription(
         key="nr_rsrq",
@@ -195,13 +308,90 @@ EXTRA_LTE_SENSOR_TYPES: Final[tuple[TPLinkSensorEntityDescription, ...]] = (
         value_fn=lambda data: data["extra_lte_status"].get("nr_ul_mod"),
     ),
     TPLinkSensorEntityDescription(
+        key="nr_bw",
+        name="5G Bandwidth",
+        icon="mdi:arrow-expand-horizontal",
+        sensor_type="extra_lte_status",
+        value_fn=lambda data: f"{data['extra_lte_status'].get('nr_dl_bw')}MHz" if data["extra_lte_status"].get("nr_dl_bw") else None,
+    ),
+    TPLinkSensorEntityDescription(
+        key="nr_cqi",
+        name="5G CQI",
+        icon="mdi:quality-high",
+        state_class=SensorStateClass.MEASUREMENT,
+        sensor_type="extra_lte_status",
+        value_fn=lambda data: data["extra_lte_status"].get("nr_cqi"),
+    ),
+    TPLinkSensorEntityDescription(
+        key="nr_tx_power",
+        name="5G Transmit Power",
+        icon="mdi:transmission-tower-export",
+        state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement="dBm",
+        sensor_type="extra_lte_status",
+        value_fn=lambda data: data["extra_lte_status"].get("nr_tx_power"),
+    ),
+    TPLinkSensorEntityDescription(
+        key="nr_rbs",
+        name="5G Resource Blocks",
+        icon="mdi:office-building-marker",
+        state_class=SensorStateClass.MEASUREMENT,
+        sensor_type="extra_lte_status",
+        value_fn=lambda data: data["extra_lte_status"].get("nr_rbs"),
+    ),
+    TPLinkSensorEntityDescription(
+        key="nr_pci",
+        name="5G PCI",
+        icon="mdi:transmission-tower",
+        sensor_type="extra_lte_status",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=lambda data: data["extra_lte_status"].get("nr_pci"),
+    ),
+    TPLinkSensorEntityDescription(
+        key="nr_tac",
+        name="5G TAC",
+        icon="mdi:transmission-tower",
+        sensor_type="extra_lte_status",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=lambda data: data["extra_lte_status"].get("nr_tac"),
+    ),
+    TPLinkSensorEntityDescription(
+        key="nr_cid",
+        name="5G Cell ID",
+        icon="mdi:transmission-tower",
+        sensor_type="extra_lte_status",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=lambda data: data["extra_lte_status"].get("nr_cid"),
+    ),
+    TPLinkSensorEntityDescription(
+        key="nr_arfcn",
+        name="5G ARFCN",
+        icon="mdi:radio-tower",
+        sensor_type="extra_lte_status",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=lambda data: data["extra_lte_status"].get("nr_arfcn"),
+    ),
+
+    # --- LTE Anchor Metrics ---
+    TPLinkSensorEntityDescription(
         key="lte_anchor_rsrp",
         name="LTE Anchor RSRP",
         icon="mdi:signal-cellular-2",
         state_class=SensorStateClass.MEASUREMENT,
         native_unit_of_measurement=SIGNAL_STRENGTH_DECIBELS_MILLIWATT,
+        device_class=SensorDeviceClass.SIGNAL_STRENGTH,
         sensor_type="extra_lte_status",
         value_fn=lambda data: data["extra_lte_status"].get("lte_rsrp"),
+    ),
+    TPLinkSensorEntityDescription(
+        key="lte_anchor_rssi",
+        name="LTE Anchor RSSI",
+        icon="mdi:signal-cellular-2",
+        state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement=SIGNAL_STRENGTH_DECIBELS_MILLIWATT,
+        device_class=SensorDeviceClass.SIGNAL_STRENGTH,
+        sensor_type="extra_lte_status",
+        value_fn=lambda data: data["extra_lte_status"].get("lte_rssi"),
     ),
     TPLinkSensorEntityDescription(
         key="lte_anchor_band",
@@ -209,6 +399,21 @@ EXTRA_LTE_SENSOR_TYPES: Final[tuple[TPLinkSensorEntityDescription, ...]] = (
         icon="mdi:antenna-tower",
         sensor_type="extra_lte_status",
         value_fn=lambda data: f"B{data['extra_lte_status'].get('lte_band')}" if data["extra_lte_status"].get("lte_band") else None,
+    ),
+    TPLinkSensorEntityDescription(
+        key="lte_anchor_bw",
+        name="LTE Anchor Bandwidth",
+        icon="mdi:arrow-expand-horizontal",
+        sensor_type="extra_lte_status",
+        value_fn=lambda data: f"{data['extra_lte_status'].get('lte_dl_bw')}MHz" if data["extra_lte_status"].get('lte_dl_bw') else None,
+    ),
+    TPLinkSensorEntityDescription(
+        key="lte_anchor_pci",
+        name="LTE Anchor PCI",
+        icon="mdi:transmission-tower",
+        sensor_type="extra_lte_status",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=lambda data: data["extra_lte_status"].get("lte_pci"),
     ),
 )
 

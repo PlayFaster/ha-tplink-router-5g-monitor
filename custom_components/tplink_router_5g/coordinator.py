@@ -52,11 +52,15 @@ class TPLinkRouterDataUpdateCoordinator(DataUpdateCoordinator):
             status = await self.api.get_status()
             lte_status = await self.api.get_lte_status()
             extra_lte = await self.api.get_extra_lte_status()
+            ipv4_status = await self.api.get_ipv4_status()
+            vpn_status = await self.api.get_vpn_status()
             
             data = {
                 "status": status,
                 "lte_status": lte_status,
                 "extra_lte_status": extra_lte,
+                "ipv4_status": ipv4_status,
+                "vpn_status": vpn_status,
                 "firmware": self.firmware
             }
 
