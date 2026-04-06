@@ -761,11 +761,8 @@ class TPLinkRouterSensor(CoordinatorEntity[TPLinkRouterDataUpdateCoordinator], S
 
         # Special case: Uptime calculation (return boot timestamp)
         if key in ["wan_uptime", "device_uptime"]:
-            uptime_seconds = None
-            if key == "wan_uptime":
-                uptime_seconds = self.coordinator.data["extra_lte_status"].get("wan_uptime_secs")
-            else:
-                uptime_seconds = self.coordinator.data["extra_lte_status"].get("sys_uptime_secs")
+            uptime_secs_key = "wan_uptime_secs" if key == "wan_uptime" else "sys_uptime_secs"
+            uptime_seconds = self.coordinator.data["extra_lte_status"].get(uptime_secs_key)
             
             if uptime_seconds is None:
                 return None
