@@ -17,7 +17,6 @@ from custom_components.tplink_router_5g.const import DEFAULT_NAME
 @pytest.mark.asyncio
 async def test_validate_credentials_success():
     """Test _validate_credentials success."""
-    hass = MagicMock()
     user_input = {CONF_HOST: "192.168.253.1", CONF_PASSWORD: "pass"}
 
     with patch(
@@ -25,9 +24,11 @@ async def test_validate_credentials_success():
     ) as mock_api_class:
         mock_api = mock_api_class.return_value
         mock_api.login = AsyncMock()
+        mock_api.logout = AsyncMock()
 
-        await _validate_credentials(hass, user_input)
+        await _validate_credentials(user_input)
         mock_api.login.assert_called_once()
+        mock_api.logout.assert_called_once()
 
 
 @pytest.mark.asyncio
