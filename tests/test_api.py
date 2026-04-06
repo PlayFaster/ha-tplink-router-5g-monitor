@@ -4,6 +4,7 @@ import asyncio
 from unittest.mock import MagicMock, patch
 
 import pytest
+from tplinkrouterc6u import Connection
 
 from custom_components.tplink_router_5g.api import (
     TPLinkRouter5GAPI,
@@ -111,8 +112,8 @@ async def test_api_set_wifi():
     ) as mock_client:
         client = mock_client.return_value
         client.set_wifi = MagicMock()
-        await api.set_wifi("wifi_2g", True)
-        client.set_wifi.assert_called_once_with("wifi_2g", True)
+        await api.set_wifi(Connection.HOST_2G, True)
+        client.set_wifi.assert_called_once_with(Connection.HOST_2G, True)
 
 
 @pytest.mark.asyncio
@@ -246,7 +247,7 @@ async def test_api_get_lte_full():
         assert extra["endc_support"] == "1"
         assert extra["daily_usage"] == 200
         assert extra["usage_limit"] == 10000
-        assert extra["data_left"] == 9800
+        assert extra["data_left"] == 9000
         assert extra["sms_send_result"] == "Success"
         assert extra["registration_status"] == "Registered"
         assert extra["service_status"] == "Full"

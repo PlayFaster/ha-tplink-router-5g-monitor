@@ -18,7 +18,7 @@ Home Assistant integration for TP-Link NX510v 5G Router that provides detailed s
 
 **Router:**
 
-- **Tested**: TP-Link NX510v *May work with other TP-Link 5G devices, but has only been tested with NX510v.*
+- **Tested**: TP-Link NX510v _May work with other TP-Link 5G devices, but has only been tested with NX510v._
 - **Not compatible**: Non-TP-Link routers, older TP-Link models without 5G
 
 **Network:**
@@ -29,7 +29,7 @@ Home Assistant integration for TP-Link NX510v 5G Router that provides detailed s
 
 - **TP-Link NX510v** – TP-Link Aginet AX3000 5G Indoor Router with WiFi 6
 
-*May work with other TP-Link 5G devices, but has only been tested with NX510v.*
+_May work with other TP-Link 5G devices, but has only been tested with NX510v._
 
 ## ✅ Features
 
@@ -62,13 +62,13 @@ Home Assistant integration for TP-Link NX510v 5G Router that provides detailed s
 
 This integration creates approximately **60+ entities**:
 
-| Type | Count | Examples |
-|------|-------|----------|
-| Sensors | 40+ | Signal strength, data usage, uptime, device info |
-| Switches | 10 | Wi-Fi control (2.4G/5G/6G), Pause Polling |
-| Binary Sensors | 3 | Roaming status, 5G support, Best Connection |
-| Buttons | 1 | Reboot |
-| Numbers | 1 | Polling interval control |
+| Type           | Count | Examples                                         |
+| -------------- | ----- | ------------------------------------------------ |
+| Sensors        | 40+   | Signal strength, data usage, uptime, device info |
+| Switches       | 10    | Wi-Fi control (2.4G/5G/6G), Pause Polling        |
+| Binary Sensors | 3     | Roaming status, 5G support, Best Connection      |
+| Buttons        | 1     | Reboot                                           |
+| Numbers        | 1     | Polling interval control                         |
 
 Organized into logical devices: **Main Router**, **Data Usage**, **Wi-Fi Control**
 

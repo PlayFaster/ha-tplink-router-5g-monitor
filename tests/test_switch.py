@@ -3,6 +3,7 @@
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
+from tplinkrouterc6u import Connection
 
 from custom_components.tplink_router_5g.const import CONF_STOP_POLLING, DOMAIN
 from custom_components.tplink_router_5g.switch import (
@@ -28,10 +29,10 @@ async def test_wifi_switch(mock_coordinator, mock_config_entry):
     mock_coordinator.api.logout = AsyncMock()
 
     await switch.async_turn_on()
-    mock_coordinator.api.set_wifi.assert_called_with("wifi_2g", True)
+    mock_coordinator.api.set_wifi.assert_called_with(Connection.HOST_2G, True)
 
     await switch.async_turn_off()
-    mock_coordinator.api.set_wifi.assert_called_with("wifi_2g", False)
+    mock_coordinator.api.set_wifi.assert_called_with(Connection.HOST_2G, False)
     mock_coordinator.async_request_refresh.assert_called()
 
 

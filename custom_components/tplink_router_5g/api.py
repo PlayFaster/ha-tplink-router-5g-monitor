@@ -3,7 +3,7 @@
 import asyncio
 import logging
 
-from tplinkrouterc6u import Connection, LTEStatus, TplinkRouterProvider
+from tplinkrouterc6u import LTEStatus, TplinkRouterProvider
 
 _LOGGER = logging.getLogger(__name__)
 

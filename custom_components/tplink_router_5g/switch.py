@@ -11,8 +11,8 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
-
 from tplinkrouterc6u import Connection
+
 from .const import CONF_STOP_POLLING, DOMAIN
 from .coordinator import TPLinkRouterDataUpdateCoordinator
 
