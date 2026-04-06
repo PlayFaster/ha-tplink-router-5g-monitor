@@ -409,13 +409,22 @@ EXTRA_LTE_SENSOR_TYPES: Final[tuple[TPLinkSensorEntityDescription, ...]] = (
         value_fn=lambda data: data["extra_lte_status"].get("nr_ul_mcs"),
     ),
     TPLinkSensorEntityDescription(
-        key="nr_bw",
-        name="5G Bandwidth",
+        key="nr_dl_bw",
+        name="5G Downlink Bandwidth",
         icon="mdi:arrow-expand-horizontal",
         state_class=SensorStateClass.MEASUREMENT,
         native_unit_of_measurement="MHz",
         sensor_type="extra_lte_status",
         value_fn=lambda data: data["extra_lte_status"].get("nr_dl_bw"),
+    ),
+    TPLinkSensorEntityDescription(
+        key="nr_ul_bw",
+        name="5G Uplink Bandwidth",
+        icon="mdi:arrow-expand-horizontal",
+        state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement="MHz",
+        sensor_type="extra_lte_status",
+        value_fn=lambda data: data["extra_lte_status"].get("nr_ul_bw"),
     ),
     TPLinkSensorEntityDescription(
         key="nr_dl_freq",
@@ -526,6 +535,15 @@ EXTRA_LTE_SENSOR_TYPES: Final[tuple[TPLinkSensorEntityDescription, ...]] = (
         value_fn=lambda data: data["extra_lte_status"].get("lte_rsrq"),
     ),
     TPLinkSensorEntityDescription(
+        key="lte_anchor_snr",
+        name="LTE Anchor SNR",
+        icon="mdi:signal-cellular-2",
+        state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement="dB",
+        sensor_type="extra_lte_status",
+        value_fn=lambda data: data["extra_lte_status"].get("lte_snr"),
+    ),
+    TPLinkSensorEntityDescription(
         key="lte_anchor_signal_pct",
         name="LTE Anchor Signal Strength",
         icon="mdi:signal",
@@ -542,13 +560,22 @@ EXTRA_LTE_SENSOR_TYPES: Final[tuple[TPLinkSensorEntityDescription, ...]] = (
         value_fn=lambda data: f"B{data['extra_lte_status'].get('lte_band')}" if data["extra_lte_status"].get('lte_band') else None,
     ),
     TPLinkSensorEntityDescription(
-        key="lte_anchor_bw",
-        name="LTE Anchor Bandwidth",
+        key="lte_anchor_dl_bw",
+        name="LTE Anchor Downlink Bandwidth",
         icon="mdi:arrow-expand-horizontal",
         state_class=SensorStateClass.MEASUREMENT,
         native_unit_of_measurement="MHz",
         sensor_type="extra_lte_status",
         value_fn=lambda data: data["extra_lte_status"].get("lte_dl_bw"),
+    ),
+    TPLinkSensorEntityDescription(
+        key="lte_anchor_ul_bw",
+        name="LTE Anchor Uplink Bandwidth",
+        icon="mdi:arrow-expand-horizontal",
+        state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement="MHz",
+        sensor_type="extra_lte_status",
+        value_fn=lambda data: data["extra_lte_status"].get("lte_ul_bw"),
     ),
     TPLinkSensorEntityDescription(
         key="lte_anchor_dl_freq",
@@ -675,6 +702,14 @@ EXTRA_LTE_SENSOR_TYPES: Final[tuple[TPLinkSensorEntityDescription, ...]] = (
         value_fn=lambda data: data["extra_lte_status"].get("lte_cid"),
     ),
     TPLinkSensorEntityDescription(
+        key="lte_anchor_arfcn",
+        name="LTE Anchor E-ARFCN",
+        icon="mdi:radio-tower",
+        sensor_type="extra_lte_status",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=lambda data: data["extra_lte_status"].get("lte_arfcn"),
+    ),
+    TPLinkSensorEntityDescription(
         key="lte_anchor_node_b_id",
         name="LTE Anchor NodeB ID",
         icon="mdi:transmission-tower",
@@ -726,8 +761,11 @@ class TPLinkRouterSensor(CoordinatorEntity[TPLinkRouterDataUpdateCoordinator], S
 
         # Special case: Uptime calculation (return boot timestamp)
         if key in ["wan_uptime", "device_uptime"]:
-            uptime_secs_key = "wan_uptime_secs" if key == "wan_uptime" else "sys_uptime_secs"
-            uptime_seconds = self.coordinator.data["extra_lte_status"].get(uptime_secs_key)
+            uptime_seconds = None
+            if key == "wan_uptime":
+                uptime_seconds = self.coordinator.data["extra_lte_status"].get("wan_uptime_secs")
+            else:
+                uptime_seconds = self.coordinator.data["extra_lte_status"].get("sys_uptime_secs")
             
             if uptime_seconds is None:
                 return None
