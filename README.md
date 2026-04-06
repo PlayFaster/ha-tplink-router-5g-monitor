@@ -8,21 +8,51 @@ Home Assistant integration for TP-Link NX510v 5G Router that provides detailed s
 - If you have an NX510v and want to closely monitor your connection, this integration is for you!
 - If you are looking for a general TP-Link Router integration, I highly recommend [TP-Link Router](https://github.com/AlexandrErohin/home-assistant-tplink-router).
 
+**Note:** This integration is based on and extends the [TP-Link Router](https://github.com/AlexandrErohin/home-assistant-tplink-router) integration. It focuses on **5G/LTE signal metrics** not available in the base integration. For general TP-Link router monitoring, see the [original integration](https://github.com/AlexandrErohin/home-assistant-tplink-router).
+
+## 🔧 Requirements & Compatibility
+
+**Home Assistant:**
+
+- Minimum: Home Assistant 2025.1
+
+**Router:**
+
+- **Tested**: TP-Link NX510v *May work with other TP-Link 5G devices, but has only been tested with NX510v.*
+- **Not compatible**: Non-TP-Link routers, older TP-Link models without 5G
+
+**Network:**
+
+- Router must be accessible from your Home Assistant instance
+
 ## Supported Models
 
-- **TP-Link NX510v** – TP-Link Aginet AX3000 5G Indoor 5G ROuter with WiFI 6. This works with, and has only been tested with, TP-Link NX510v. It may work with other similar TP-Link devices.
+- **TP-Link NX510v** – TP-Link Aginet AX3000 5G Indoor Router with WiFi 6
+ 
+*May work with other TP-Link 5G devices, but has only been tested with NX510v.*
 
-## ✅ Features
+## ✅ Features 
 
-- **Signal Monitoring**: Real-time RSRP, RSRQ, RSSI, and SNR for both LTE and 5G.
-- **Data Tracking**: Daily and monthly data usage, along with monthly limit and remaining information.
-- **Connected Clients**: Connected client count, total, wired and WiFi .
+### Core Monitoring
+
+- **5G/LTE Signal Metrics**: RSRP, RSRQ, RSSI, SNR for both 5G and anchor LTE connections
+- **Advanced 5G Data**: CQI, Modulation, MCS, Resource Blocks, TX Power
+- **Data Usage Tracking**: Real-time daily and monthly usage, monthly limits, remaining data
+- **Connected Clients**: Total count, breakdown by connection type (WiFi/Wired)
 - **Basic SMS Management**: Unread SMS flag.
-- **Categorized Devices**: Separate devices for Router Stats, Data Usage, SMS and WiFI.
-- **Resilient Polling**: Includes a hybrid retry logic (30s retry) and stale-data grace periods to prevent "Unavailable" flickers during router reboots.
-- **Pause Polling**: Switch to allow uninterrupted access to the router webui if needed (TP-Link only allow a single login).
+- **Router Management**: Reboot control, separate WiFi band management
+- **Router Stats**: CPU and Memory percentage.
+
+### Smart Features
+
+- **Resilient Polling**: Automatic retry with grace period prevents "Unavailable" flickering
+- **WiFi Band Control**: Manage 2.4G/5G/6G separately for Main, Guest, and IoT networks
+- **Pause Polling**: Switch to stop polling when you need direct router access (TP-Link limits one login)
+- **Configurable Update Interval**: From 30 seconds to 1 hour.
+- **Organized Device Grouping**: Entities logically organized by function - 5G/LTE, Data Usage, SMS and WiFi.
 
 ### Why This Integration?
+
 - ✅ **5G-specific metrics** not in base TP-Link integration
 - ✅ **Signal analytics** for troubleshooting connection issues
 - ✅ **Granular WiFi control** (separate main/guest/IoT networks)
@@ -50,6 +80,9 @@ Organized into logical devices: **Main Router**, **Data Usage**, **Wi-Fi Control
 > - These devices and their entities can be disabled from the main device page.
 >   - Three dots menu per device, "Disable Device"
 
+## ❔ Whats Missing?
+
+- SMS Management: The integration has a sensor for unread SMS, but to read SMS or manage the Router SMS Inbox you must use the device GUI.
 
 
 ## 📸 Screenshots

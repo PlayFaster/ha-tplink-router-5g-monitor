@@ -12,6 +12,7 @@ from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
+from tplinkrouterc6u import Connection
 from .const import CONF_STOP_POLLING, DOMAIN
 from .coordinator import TPLinkRouterDataUpdateCoordinator
 
@@ -22,7 +23,7 @@ _LOGGER = logging.getLogger(__name__)
 class TPLinkWifiSwitchDescription(SwitchEntityDescription):
     """Describes TP-Link wifi switch entity."""
 
-    wifi_connection: str
+    wifi_connection: Connection
     property_name: str
     group: str = "wifi"
 
@@ -32,64 +33,64 @@ WIFI_SWITCHES: Final[tuple[TPLinkWifiSwitchDescription, ...]] = (
         key="wifi_2g_main",
         name="Main Wi-Fi 2.4GHz",
         icon="mdi:wifi",
-        wifi_connection="wifi_2g",
+        wifi_connection=Connection.HOST_2G,
         property_name="wifi_2g_enable",
     ),
     TPLinkWifiSwitchDescription(
         key="wifi_5g_main",
         name="Main Wi-Fi 5GHz",
         icon="mdi:wifi",
-        wifi_connection="wifi_5g",
+        wifi_connection=Connection.HOST_5G,
         property_name="wifi_5g_enable",
     ),
     TPLinkWifiSwitchDescription(
         key="wifi_6g_main",
         name="Main Wi-Fi 6GHz",
         icon="mdi:wifi",
-        wifi_connection="wifi_6g",
+        wifi_connection=Connection.HOST_6G,
         property_name="wifi_6g_enable",
     ),
     TPLinkWifiSwitchDescription(
         key="wifi_2g_guest",
         name="Guest Wi-Fi 2.4GHz",
         icon="mdi:wifi",
-        wifi_connection="wifi_2g_guest",
-        property_name="wifi_2g_guest_enable",
+        wifi_connection=Connection.GUEST_2G,
+        property_name="guest_2g_enable",
     ),
     TPLinkWifiSwitchDescription(
         key="wifi_5g_guest",
         name="Guest Wi-Fi 5GHz",
         icon="mdi:wifi",
-        wifi_connection="wifi_5g_guest",
-        property_name="wifi_5g_guest_enable",
+        wifi_connection=Connection.GUEST_5G,
+        property_name="guest_5g_enable",
     ),
     TPLinkWifiSwitchDescription(
         key="wifi_6g_guest",
         name="Guest Wi-Fi 6GHz",
         icon="mdi:wifi",
-        wifi_connection="wifi_6g_guest",
-        property_name="wifi_6g_guest_enable",
+        wifi_connection=Connection.GUEST_6G,
+        property_name="guest_6g_enable",
     ),
     TPLinkWifiSwitchDescription(
         key="wifi_2g_iot",
         name="IoT Wi-Fi 2.4GHz",
         icon="mdi:wifi",
-        wifi_connection="wifi_2g_iot",
-        property_name="wifi_2g_iot_enable",
+        wifi_connection=Connection.IOT_2G,
+        property_name="iot_2g_enable",
     ),
     TPLinkWifiSwitchDescription(
         key="wifi_5g_iot",
         name="IoT Wi-Fi 5GHz",
         icon="mdi:wifi",
-        wifi_connection="wifi_5g_iot",
-        property_name="wifi_5g_iot_enable",
+        wifi_connection=Connection.IOT_5G,
+        property_name="iot_5g_enable",
     ),
     TPLinkWifiSwitchDescription(
         key="wifi_6g_iot",
         name="IoT Wi-Fi 6GHz",
         icon="mdi:wifi",
-        wifi_connection="wifi_6g_iot",
-        property_name="wifi_6g_iot_enable",
+        wifi_connection=Connection.IOT_6G,
+        property_name="iot_6g_enable",
     ),
 )
 
