@@ -119,6 +119,22 @@ SENSOR_TYPES: Final[tuple[TPLinkSensorEntityDescription, ...]] = (
         entity_category=EntityCategory.DIAGNOSTIC,
         value_fn=lambda data: None, # Handled in native_value
     ),
+    TPLinkSensorEntityDescription(
+        key="wan_uptime",
+        name="WAN Uptime",
+        icon="mdi:timer-outline",
+        device_class=SensorDeviceClass.TIMESTAMP,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=lambda data: data["extra_lte_status"].get("wan_uptime_secs"),
+    ),
+    TPLinkSensorEntityDescription(
+        key="device_uptime",
+        name="Device Uptime",
+        icon="mdi:clock-start",
+        device_class=SensorDeviceClass.TIMESTAMP,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=lambda data: data["extra_lte_status"].get("sys_uptime_secs"),
+    ),
     
     # --- Main Device: Connection Metrics ---
     TPLinkSensorEntityDescription(
@@ -611,8 +627,25 @@ class TPLinkRouterSensor(CoordinatorEntity[TPLinkRouterDataUpdateCoordinator], S
             return None
         
         key = self.entity_description.key
+        
+        # Special case: Last Updated
         if key == "last_updated":
             return self.coordinator.last_update_success_time
+
+        # Special case: Uptime calculation (look in extra_lte_status now)
+        if key in ["wan_uptime", "device_uptime"]:
+            uptime_secs_key = "wan_uptime_secs" if key == "wan_uptime" else "sys_uptime_secs"
+            uptime_seconds = self.coordinator.data["extra_lte_status"].get(uptime_secs_key)
+            
+            if uptime_seconds is None:
+                return None
+            try:
+                seconds = int(float(uptime_seconds))
+                if seconds <= 0: return None
+                boot_time = dt_util.now() - timedelta(seconds=seconds)
+                return boot_time.replace(second=0, microsecond=0)
+            except:
+                return None
 
         try:
             return self.entity_description.value_fn(self.coordinator.data)
@@ -646,7 +679,7 @@ class TPLinkRouterSensor(CoordinatorEntity[TPLinkRouterDataUpdateCoordinator], S
         
         return {
             "identifiers": {(DOMAIN, f"{sub_id_prefix}_{group}")},
-            "name": f"{self._entry.title} {display_group}",
+            "name": sub_name,
             "manufacturer": "TP-Link",
             "via_device": list(main_identifiers)[0],
         }

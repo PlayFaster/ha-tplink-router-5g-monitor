@@ -2,6 +2,7 @@
 
 import logging
 import asyncio
+import re
 from tplinkrouterc6u import TplinkRouterProvider, LTEStatus
 
 _LOGGER = logging.getLogger(__name__)
@@ -14,6 +15,23 @@ def _safe_int(value, default=0):
         return int(float(value))
     except (ValueError, TypeError):
         return default
+
+def _parse_uptime_to_seconds(uptime_str):
+    """Convert 'X days HH:MM:SS' or 'HH:MM:SS' to total seconds."""
+    if not uptime_str or not isinstance(uptime_str, str):
+        return None
+    try:
+        # Regex to handle both 'X days HH:MM:SS' and 'HH:MM:SS'
+        match = re.search(r'(?:(\d+)\s+days?,\s+)?(\d+):(\d+):(\d+)', uptime_str)
+        if match:
+            days = int(match.group(1)) if match.group(1) else 0
+            hours = int(match.group(2))
+            minutes = int(match.group(3))
+            seconds = int(match.group(4))
+            return days * 86400 + hours * 3600 + minutes * 60 + seconds
+    except:
+        pass
+    return None
 
 class TPLinkRouter5GAPI:
     """Async wrapper for the TP-Link Router library."""
@@ -84,6 +102,10 @@ class TPLinkRouter5GAPI:
                 ActItem(ActItem.GET, 'DEV2_LTE_PROF_STAT', '1,0,0,0,0,0', attrs=['ispName']),
                 # 4: Cells (5G Metrics)
                 ActItem(ActItem.GL, 'DEV2_LTE_SERVING_CELL_INFO', '0,0,0,0,0,0', attrs=[]),
+                # 5: WAN Status (Internet Uptime)
+                ActItem(ActItem.GET, 'DEV2_WAN_IF_STATUS', '1,0,0,0,0,0', attrs=['upTime']),
+                # 6: System Status (Device Uptime)
+                ActItem(ActItem.GET, 'DEV2_SYS_STATUS', '0,0,0,0,0,0', attrs=['upTime']),
             ]
             _, values = self.client.req_act(acts)
             return values
@@ -91,8 +113,10 @@ class TPLinkRouter5GAPI:
         values = await asyncio.to_thread(fetch_all)
         
         lte_status = LTEStatus()
+        extra = {}
         if values:
             try:
+                # 1. Standard LTEStatus mapping (compatibility)
                 if len(values) > 0 and values[0]:
                     v0 = values[0]
                     lte_status.enable = _safe_int(v0.get('enable'))
@@ -113,78 +137,74 @@ class TPLinkRouter5GAPI:
                     lte_status.snr = _safe_int(v2.get('rfInfoSnr'))
                 if len(values) > 3 and values[3]:
                     lte_status.isp_name = values[3].get('ispName')
+
+                # 2. Extra Metrics (Unified store)
+                if len(values) > 0 and values[0]:
+                    extra["roaming"] = values[0].get("roamingStatus")
+                    extra["endc_support"] = values[0].get("endcStatus")
+                if len(values) > 1 and values[1]:
+                    limit = _safe_int(values[1].get("limitation"))
+                    usage = _safe_int(values[1].get("dailyFlow"))
+                    extra["daily_usage"] = usage
+                    extra["usage_limit"] = limit
+                    extra["payment_day"] = values[1].get("paymentDay")
+                    if limit > 0:
+                        extra["data_left"] = max(0, limit - usage)
+                if len(values) > 2 and values[2]:
+                    res_code = _safe_int(values[2].get("smsSendResult"), 3)
+                    extra["sms_send_result"] = {0:"Success", 1:"Fail", 2:"Sending", 3:"Idle"}.get(res_code, f"Unknown ({res_code})")
+                    cause_code = _safe_int(values[2].get("smsSendCause"), 0)
+                    extra["sms_send_cause"] = "None" if cause_code == 0 else f"Error {cause_code}"
+                    extra["registration_status"] = {0:"Unregistered", 1:"Registered", 2:"Searching", 3:"Denied", 4:"Unknown", 5:"Roaming"}.get(_safe_int(values[2].get("regStat")), "Unknown")
+                    extra["service_status"] = {0:"No Service", 1:"Limited", 2:"Full", 3:"Unknown"}.get(_safe_int(values[2].get("srvStat")), "Unknown")
+
+                # Uptime handling (store in extra)
+                if len(values) > 5 and values[5] and values[5].get('upTime'):
+                    extra["wan_uptime_secs"] = _parse_uptime_to_seconds(values[5]['upTime'])
+                if len(values) > 6 and values[6] and values[6].get('upTime'):
+                    extra["sys_uptime_secs"] = _parse_uptime_to_seconds(values[6]['upTime'])
+
+                if len(values) > 4 and isinstance(values[4], list):
+                    for cell in values[4]:
+                        if cell.get('cellConnectionStatus') != '1': continue
+                        net_type = cell.get('networkType')
+                        prefix = "nr_" if net_type == '8' else "lte_"
+                        for k, v in cell.items():
+                            if net_type == '8':
+                                if k == 'SSRSRP': extra[f"{prefix}rsrp"] = _safe_int(v)
+                                elif k == 'SSRSRQ': extra[f"{prefix}rsrq"] = _safe_int(v)
+                                elif k == 'SSSINR': extra[f"{prefix}snr"] = _safe_int(v)
+                            else:
+                                if k == 'RSRP': extra[f"{prefix}rsrp"] = _safe_int(v)
+                                elif k == 'RSRQ': extra[f"{prefix}rsrq"] = _safe_int(v)
+                                elif k == 'SNR': extra[f"{prefix}snr"] = _safe_int(v)
+                            
+                            if k == 'band': extra[f"{prefix}band"] = v
+                            elif k == 'RSSI': extra[f"{prefix}rssi"] = _safe_int(v)
+                            elif k == 'PCI': extra[f"{prefix}pci"] = v
+                            elif k == 'TAC': extra[f"{prefix}tac"] = v
+                            elif k == 'cid': extra[f"{prefix}cid"] = v
+                            elif k == 'ARFCN': extra[f"{prefix}arfcn"] = v
+                            elif k == 'downlinkModType': extra[f"{prefix}dl_mod"] = v
+                            elif k == 'uplinkModType': extra[f"{prefix}ul_mod"] = v
+                            elif k == 'downBandWidth': extra[f"{prefix}dl_bw"] = _safe_int(v) // 1000
+                            elif k == 'upBandWidth': extra[f"{prefix}ul_bw"] = _safe_int(v) // 1000
+                            elif k == 'downFreq': extra[f"{prefix}dl_freq"] = _safe_int(v)
+                            elif k == 'upFreq': extra[f"{prefix}ul_freq"] = _safe_int(v)
+                            elif k == 'downMCS': extra[f"{prefix}dl_mcs"] = _safe_int(v)
+                            elif k == 'upMCS': extra[f"{prefix}ul_mcs"] = _safe_int(v)
+                            elif k == 'CQI': extra[f"{prefix}cqi"] = _safe_int(v)
+                            elif k == 'RI': extra[f"{prefix}ri"] = _safe_int(v)
+                            elif k == 'PMI': extra[f"{prefix}pmi"] = _safe_int(v)
+                            elif k == 'tbSize': extra[f"{prefix}tbs"] = _safe_int(v)
+                            elif k == 'txPowerPUCCH': extra[f"{prefix}tx_power"] = _safe_int(v)
+                            elif k == 'numRbs': extra[f"{prefix}rbs"] = _safe_int(v)
+                            elif k == 'nodeBId': extra[f"{prefix}node_b_id"] = v
+                            elif k == 'CGI': extra[f"{prefix}cgi"] = v
+                            elif k == 'signalStrength': extra[f"{prefix}signal_pct"] = _safe_int(v) * 25
+
             except Exception as err:
-                _LOGGER.debug("Error mapping LTE status: %s", err)
-
-        # 2. Parse Extra Metrics
-        extra = {}
-        if values:
-            if len(values) > 0 and values[0]:
-                extra["roaming"] = values[0].get("roamingStatus")
-                extra["endc_support"] = values[0].get("endcStatus")
-            if len(values) > 1 and values[1]:
-                limit = _safe_int(values[1].get("limitation"))
-                usage = _safe_int(values[1].get("dailyFlow"))
-                extra["daily_usage"] = usage
-                extra["usage_limit"] = limit
-                extra["payment_day"] = values[1].get("paymentDay")
-                if limit > 0:
-                    extra["data_left"] = max(0, limit - usage)
-            if len(values) > 2 and values[2]:
-                res_code = _safe_int(values[2].get("smsSendResult"), 3)
-                extra["sms_send_result"] = {0:"Success", 1:"Fail", 2:"Sending", 3:"Idle"}.get(res_code, f"Unknown ({res_code})")
-                cause_code = _safe_int(values[2].get("smsSendCause"), 0)
-                extra["sms_send_cause"] = "None" if cause_code == 0 else f"Error {cause_code}"
-                
-                reg_code = _safe_int(values[2].get("regStat"))
-                extra["registration_status"] = {0:"Unregistered", 1:"Registered", 2:"Searching", 3:"Denied", 4:"Unknown", 5:"Roaming"}.get(reg_code, f"Code {reg_code}")
-                srv_code = _safe_int(values[2].get("srvStat"))
-                extra["service_status"] = {0:"No Service", 1:"Limited", 2:"Full", 3:"Unknown"}.get(srv_code, f"Code {srv_code}")
-
-            if len(values) > 4 and isinstance(values[4], list):
-                for cell in values[4]:
-                    if cell.get('cellConnectionStatus') != '1':
-                        continue
-                    net_type = cell.get('networkType')
-                    prefix = "nr_" if net_type == '8' else "lte_"
-                    for k, v in cell.items():
-                        # Return RAW numeric values for technical metrics
-                        if net_type == '8':
-                            if k == 'SSRSRP': extra[f"{prefix}rsrp"] = _safe_int(v)
-                            elif k == 'SSRSRQ': extra[f"{prefix}rsrq"] = _safe_int(v)
-                            elif k == 'SSSINR': extra[f"{prefix}snr"] = _safe_int(v)
-                        else:
-                            if k == 'RSRP': extra[f"{prefix}rsrp"] = _safe_int(v)
-                            elif k == 'RSRQ': extra[f"{prefix}rsrq"] = _safe_int(v)
-                            elif k == 'SNR': extra[f"{prefix}snr"] = _safe_int(v)
-                        
-                        if k == 'band': extra[f"{prefix}band"] = v
-                        elif k == 'RSSI': extra[f"{prefix}rssi"] = _safe_int(v)
-                        elif k == 'PCI': extra[f"{prefix}pci"] = v
-                        elif k == 'TAC': extra[f"{prefix}tac"] = v
-                        elif k == 'cid': extra[f"{prefix}cid"] = v
-                        elif k == 'ARFCN': extra[f"{prefix}arfcn"] = v
-                        elif k == 'downlinkModType': extra[f"{prefix}dl_mod"] = v
-                        elif k == 'uplinkModType': extra[f"{prefix}ul_mod"] = v
-                        elif k == 'downBandWidth':
-                            # Convert KHz to MHz as number
-                            extra[f"{prefix}dl_bw"] = _safe_int(v) // 1000
-                        elif k == 'upBandWidth':
-                            extra[f"{prefix}ul_bw"] = _safe_int(v) // 1000
-                        elif k == 'downFreq': extra[f"{prefix}dl_freq"] = _safe_int(v)
-                        elif k == 'upFreq': extra[f"{prefix}ul_freq"] = _safe_int(v)
-                        elif k == 'downMCS': extra[f"{prefix}dl_mcs"] = _safe_int(v)
-                        elif k == 'upMCS': extra[f"{prefix}ul_mcs"] = _safe_int(v)
-                        elif k == 'CQI': extra[f"{prefix}cqi"] = _safe_int(v)
-                        elif k == 'RI': extra[f"{prefix}ri"] = _safe_int(v)
-                        elif k == 'PMI': extra[f"{prefix}pmi"] = _safe_int(v)
-                        elif k == 'tbSize': extra[f"{prefix}tbs"] = _safe_int(v)
-                        elif k == 'txPowerPUCCH': extra[f"{prefix}tx_power"] = _safe_int(v)
-                        elif k == 'numRbs': extra[f"{prefix}rbs"] = _safe_int(v)
-                        elif k == 'nodeBId': extra[f"{prefix}node_b_id"] = v
-                        elif k == 'CGI': extra[f"{prefix}cgi"] = v
-                        elif k == 'signalStrength':
-                            extra[f"{prefix}signal_pct"] = _safe_int(v) * 25
+                _LOGGER.error("Error parsing technical status: %s", err)
 
         return lte_status, extra
 
