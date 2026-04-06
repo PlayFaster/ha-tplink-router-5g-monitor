@@ -11,6 +11,7 @@ from homeassistant.components.switch import (
 )
 from homeassistant.const import CONF_HOST, EntityCategory
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
+from homeassistant.helpers.device_registry import CONNECTION_NETWORK_MAC
 from tplinkrouterc6u import Connection
 
 from .const import CONF_STOP_POLLING, DOMAIN
@@ -167,11 +168,22 @@ class TPLinkPausePollingSwitch(CoordinatorEntity[TPLinkRouterDataUpdateCoordinat
     def device_info(self):
         """Return device information."""
         host = self._entry.options[CONF_HOST]
-        return {
-            "identifiers": {(DOMAIN, host)},
-            "name": self._entry.title,
-            "manufacturer": "TP-Link",
-        }
+        group = self.entity_description.group
+        
+        if group == "main":
+            # Main device uses MAC as identifier and connection if available
+            identifiers = {(DOMAIN, self.coordinator.mac)} if self.coordinator.mac else {(DOMAIN, host)}
+            connections = {(CONNECTION_NETWORK_MAC, self.coordinator.mac)} if self.coordinator.mac else set()
+            return {
+                "identifiers": identifiers,
+                "connections": connections,
+                "name": self._entry.title,
+                "manufacturer": "TP-Link",
+                "model": self.coordinator.firmware.model if self.coordinator.firmware else "NX510v",
+                "sw_version": self.coordinator.firmware.firmware_version if self.coordinator.firmware else None,
+                "hw_version": self.coordinator.firmware.hardware_version if self.coordinator.firmware else None,
+                "configuration_url": f"http://{host}",
+            }
 
 class TPLinkWifiSwitch(CoordinatorEntity[TPLinkRouterDataUpdateCoordinator], SwitchEntity):
     """Switch to enable/disable Wi-Fi bands."""
@@ -222,7 +234,7 @@ class TPLinkWifiSwitch(CoordinatorEntity[TPLinkRouterDataUpdateCoordinator], Swi
         host = self._entry.options[CONF_HOST]
         return {
             "identifiers": {(DOMAIN, f"{host}_wifi")},
-            "name": f"{self._entry.title} Wifi",
+            "name": f"{self._entry.title} Wi-Fi",
             "manufacturer": "TP-Link",
             "via_device": (DOMAIN, host),
         }

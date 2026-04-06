@@ -23,6 +23,7 @@ class TPLinkRouterDataUpdateCoordinator(DataUpdateCoordinator):
         self.consecutive_failures = 0
         self.last_update_success_time = None
         self.firmware = None
+        self.mac = None
 
         scan_interval = entry.options.get(CONF_SCAN_INTERVAL, 30)
 
@@ -50,6 +51,9 @@ class TPLinkRouterDataUpdateCoordinator(DataUpdateCoordinator):
                 self.firmware = await self.api.get_firmware()
             
             status = await self.api.get_status()
+            if status and status.lan_macaddr:
+                self.mac = status.lan_macaddr
+            
             lte_status = await self.api.get_lte_status()
             extra_lte = await self.api.get_extra_lte_status()
             ipv4_status = await self.api.get_ipv4_status()

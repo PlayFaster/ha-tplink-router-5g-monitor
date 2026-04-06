@@ -10,6 +10,7 @@ from homeassistant.components.button import (
 )
 from homeassistant.const import CONF_HOST
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
+from homeassistant.helpers.device_registry import CONNECTION_NETWORK_MAC
 
 from .const import DOMAIN
 from .coordinator import TPLinkRouterDataUpdateCoordinator
@@ -49,10 +50,17 @@ class TPLinkRebootButton(CoordinatorEntity[TPLinkRouterDataUpdateCoordinator], B
     def device_info(self):
         """Return device information."""
         host = self._entry.options[CONF_HOST]
+        identifiers = {(DOMAIN, self.coordinator.mac)} if self.coordinator.mac else {(DOMAIN, host)}
+        connections = {(CONNECTION_NETWORK_MAC, self.coordinator.mac)} if self.coordinator.mac else set()
         return {
-            "identifiers": {(DOMAIN, host)},
+            "identifiers": identifiers,
+            "connections": connections,
             "name": self._entry.title,
             "manufacturer": "TP-Link",
+            "model": self.coordinator.firmware.model if self.coordinator.firmware else "NX510v",
+            "sw_version": self.coordinator.firmware.firmware_version if self.coordinator.firmware else None,
+            "hw_version": self.coordinator.firmware.hardware_version if self.coordinator.firmware else None,
+            "configuration_url": f"http://{host}",
         }
 
     async def async_press(self) -> None:

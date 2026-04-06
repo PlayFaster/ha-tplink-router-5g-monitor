@@ -10,6 +10,7 @@ from homeassistant.components.number import (
 )
 from homeassistant.const import CONF_HOST, UnitOfTime
 from homeassistant.helpers.entity import EntityCategory
+from homeassistant.helpers.device_registry import CONNECTION_NETWORK_MAC
 
 from .const import CONF_SCAN_INTERVAL, DOMAIN
 from .coordinator import TPLinkRouterDataUpdateCoordinator
@@ -76,8 +77,15 @@ class TPLinkPollingInterval(NumberEntity):
     def device_info(self):
         """Return device information."""
         host = self._entry.options[CONF_HOST]
+        identifiers = {(DOMAIN, self._coordinator.mac)} if self._coordinator.mac else {(DOMAIN, host)}
+        connections = {(CONNECTION_NETWORK_MAC, self._coordinator.mac)} if self._coordinator.mac else set()
         return {
-            "identifiers": {(DOMAIN, host)},
+            "identifiers": identifiers,
+            "connections": connections,
             "name": self._entry.title,
             "manufacturer": "TP-Link",
+            "model": self._coordinator.firmware.model if self._coordinator.firmware else "NX510v",
+            "sw_version": self._coordinator.firmware.firmware_version if self._coordinator.firmware else None,
+            "hw_version": self._coordinator.firmware.hardware_version if self._coordinator.firmware else None,
+            "configuration_url": f"http://{host}",
         }

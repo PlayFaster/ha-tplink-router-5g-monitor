@@ -20,6 +20,7 @@ from homeassistant.const import (
     EntityCategory,
 )
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
+from homeassistant.helpers.device_registry import CONNECTION_NETWORK_MAC
 
 from .const import DOMAIN
 from .coordinator import TPLinkRouterDataUpdateCoordinator
@@ -175,6 +176,7 @@ SENSOR_TYPES: Final[tuple[TPLinkSensorEntityDescription, ...]] = (
         icon="mdi:download",
         state_class=SensorStateClass.MEASUREMENT,
         native_unit_of_measurement=UnitOfDataRate.BYTES_PER_SECOND,
+        device_class=SensorDeviceClass.DATA_RATE,
         sensor_type="lte_status",
         group="data",
         value_fn=lambda data: data["lte_status"].cur_rx_speed if data["lte_status"] else None,
@@ -185,6 +187,7 @@ SENSOR_TYPES: Final[tuple[TPLinkSensorEntityDescription, ...]] = (
         icon="mdi:upload",
         state_class=SensorStateClass.MEASUREMENT,
         native_unit_of_measurement=UnitOfDataRate.BYTES_PER_SECOND,
+        device_class=SensorDeviceClass.DATA_RATE,
         sensor_type="lte_status",
         group="data",
         value_fn=lambda data: data["lte_status"].cur_tx_speed if data["lte_status"] else None,
@@ -235,6 +238,22 @@ SENSOR_TYPES: Final[tuple[TPLinkSensorEntityDescription, ...]] = (
         state_class=SensorStateClass.TOTAL,
         group="clients",
         value_fn=lambda data: data["status"].wifi_clients_total,
+    ),
+    TPLinkSensorEntityDescription(
+        key="guest_wifi_clients_total",
+        name="Total Guest Wi-Fi Clients",
+        icon="mdi:wifi",
+        state_class=SensorStateClass.TOTAL,
+        group="clients",
+        value_fn=lambda data: data["status"].guest_clients_total,
+    ),
+    TPLinkSensorEntityDescription(
+        key="iot_clients_total",
+        name="Total IoT Clients",
+        icon="mdi:wifi",
+        state_class=SensorStateClass.TOTAL,
+        group="clients",
+        value_fn=lambda data: data["status"].iot_clients_total,
     ),
     TPLinkSensorEntityDescription(
         key="wired_clients_total",
@@ -460,18 +479,29 @@ class TPLinkRouterSensor(CoordinatorEntity[TPLinkRouterDataUpdateCoordinator], S
         group = self.entity_description.group
         
         if group == "main":
+            # Main device uses MAC as identifier and connection if available
+            identifiers = {(DOMAIN, self.coordinator.mac)} if self.coordinator.mac else {(DOMAIN, host)}
+            connections = {(CONNECTION_NETWORK_MAC, self.coordinator.mac)} if self.coordinator.mac else set()
             return {
-                "identifiers": {(DOMAIN, host)},
+                "identifiers": identifiers,
+                "connections": connections,
                 "name": self._entry.title,
                 "manufacturer": "TP-Link",
-                "model": self.coordinator.firmware.model if self.coordinator.firmware else "5G Router",
+                "model": self.coordinator.firmware.model if self.coordinator.firmware else "NX510v",
                 "sw_version": self.coordinator.firmware.firmware_version if self.coordinator.firmware else None,
                 "hw_version": self.coordinator.firmware.hardware_version if self.coordinator.firmware else None,
                 "configuration_url": f"http://{host}",
             }
             
         # Sub-device naming logic
-        sub_name = f"{self._entry.title} {group.capitalize()}"
+        group_names = {
+            "sms": "SMS",
+            "wifi": "Wi-Fi",
+            "data": "Data",
+            "clients": "Clients",
+        }
+        display_group = group_names.get(group, group.capitalize())
+        sub_name = f"{self._entry.title} {display_group}"
         return {
             "identifiers": {(DOMAIN, f"{host}_{group}")},
             "name": sub_name,
