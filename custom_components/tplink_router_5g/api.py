@@ -78,9 +78,20 @@ class TPLinkRouter5GAPI:
         return await asyncio.to_thread(self.client.get_firmware)
 
     async def get_status(self):
-        """Get basic status."""
+        """Get basic status including system uptime."""
         await self._ensure_client()
-        return await asyncio.to_thread(self.client.get_status)
+        status = await asyncio.to_thread(self.client.get_status)
+        
+        if status:
+            try:
+                ActItem = self.client.ActItem
+                act = ActItem(ActItem.GET, 'DEV2_SYS_STATUS', '0,0,0,0,0,0', attrs=['upTime'])
+                _, values = await asyncio.to_thread(self.client.req_act, [act])
+                if values and values[0] and values[0].get('upTime'):
+                    status.uptime = _parse_uptime_to_seconds(values[0]['upTime'])
+            except:
+                pass
+        return status
 
     async def get_lte_and_extra_status(self):
         """Fetch all LTE/5G and extra metrics in a single session."""
@@ -104,8 +115,6 @@ class TPLinkRouter5GAPI:
                 ActItem(ActItem.GL, 'DEV2_LTE_SERVING_CELL_INFO', '0,0,0,0,0,0', attrs=[]),
                 # 5: WAN Status (Internet Uptime)
                 ActItem(ActItem.GET, 'DEV2_WAN_IF_STATUS', '1,0,0,0,0,0', attrs=['upTime']),
-                # 6: System Status (Device Uptime)
-                ActItem(ActItem.GET, 'DEV2_SYS_STATUS', '0,0,0,0,0,0', attrs=['upTime']),
             ]
             _, values = self.client.req_act(acts)
             return values
@@ -116,7 +125,7 @@ class TPLinkRouter5GAPI:
         extra = {}
         if values:
             try:
-                # 1. Standard LTEStatus mapping (compatibility)
+                # Standard LTEStatus mapping
                 if len(values) > 0 and values[0]:
                     v0 = values[0]
                     lte_status.enable = _safe_int(v0.get('enable'))
@@ -137,8 +146,11 @@ class TPLinkRouter5GAPI:
                     lte_status.snr = _safe_int(v2.get('rfInfoSnr'))
                 if len(values) > 3 and values[3]:
                     lte_status.isp_name = values[3].get('ispName')
+                
+                if len(values) > 5 and values[5] and values[5].get('upTime'):
+                    extra["wan_uptime_secs"] = _parse_uptime_to_seconds(values[5]['upTime'])
 
-                # 2. Extra Metrics (Unified store)
+                # Extra Metrics
                 if len(values) > 0 and values[0]:
                     extra["roaming"] = values[0].get("roamingStatus")
                     extra["endc_support"] = values[0].get("endcStatus")
@@ -157,12 +169,6 @@ class TPLinkRouter5GAPI:
                     extra["sms_send_cause"] = "None" if cause_code == 0 else f"Error {cause_code}"
                     extra["registration_status"] = {0:"Unregistered", 1:"Registered", 2:"Searching", 3:"Denied", 4:"Unknown", 5:"Roaming"}.get(_safe_int(values[2].get("regStat")), "Unknown")
                     extra["service_status"] = {0:"No Service", 1:"Limited", 2:"Full", 3:"Unknown"}.get(_safe_int(values[2].get("srvStat")), "Unknown")
-
-                # Uptime handling (store in extra)
-                if len(values) > 5 and values[5] and values[5].get('upTime'):
-                    extra["wan_uptime_secs"] = _parse_uptime_to_seconds(values[5]['upTime'])
-                if len(values) > 6 and values[6] and values[6].get('upTime'):
-                    extra["sys_uptime_secs"] = _parse_uptime_to_seconds(values[6]['upTime'])
 
                 if len(values) > 4 and isinstance(values[4], list):
                     for cell in values[4]:

@@ -125,7 +125,7 @@ SENSOR_TYPES: Final[tuple[TPLinkSensorEntityDescription, ...]] = (
         icon="mdi:timer-outline",
         device_class=SensorDeviceClass.TIMESTAMP,
         entity_category=EntityCategory.DIAGNOSTIC,
-        value_fn=lambda data: data["extra_lte_status"].get("wan_uptime_secs"),
+        value_fn=lambda data: None, # Handled in native_value
     ),
     TPLinkSensorEntityDescription(
         key="device_uptime",
@@ -133,7 +133,7 @@ SENSOR_TYPES: Final[tuple[TPLinkSensorEntityDescription, ...]] = (
         icon="mdi:clock-start",
         device_class=SensorDeviceClass.TIMESTAMP,
         entity_category=EntityCategory.DIAGNOSTIC,
-        value_fn=lambda data: data["extra_lte_status"].get("sys_uptime_secs"),
+        value_fn=lambda data: None, # Handled in native_value
     ),
     
     # --- Main Device: Connection Metrics ---
@@ -428,6 +428,16 @@ EXTRA_LTE_SENSOR_TYPES: Final[tuple[TPLinkSensorEntityDescription, ...]] = (
         value_fn=lambda data: data["extra_lte_status"].get("nr_dl_freq"),
     ),
     TPLinkSensorEntityDescription(
+        key="nr_ul_freq",
+        name="5G Uplink Frequency",
+        icon="mdi:waveform",
+        state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement="MHz",
+        sensor_type="extra_lte_status",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=lambda data: data["extra_lte_status"].get("nr_ul_freq"),
+    ),
+    TPLinkSensorEntityDescription(
         key="nr_cqi",
         name="5G CQI",
         icon="mdi:quality-high",
@@ -551,12 +561,94 @@ EXTRA_LTE_SENSOR_TYPES: Final[tuple[TPLinkSensorEntityDescription, ...]] = (
         value_fn=lambda data: data["extra_lte_status"].get("lte_dl_freq"),
     ),
     TPLinkSensorEntityDescription(
+        key="lte_anchor_ul_freq",
+        name="LTE Uplink Frequency",
+        icon="mdi:waveform",
+        state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement="MHz",
+        sensor_type="extra_lte_status",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=lambda data: data["extra_lte_status"].get("lte_ul_freq"),
+    ),
+    TPLinkSensorEntityDescription(
         key="lte_anchor_dl_mcs",
         name="LTE DL MCS",
         icon="mdi:numeric",
         state_class=SensorStateClass.MEASUREMENT,
         sensor_type="extra_lte_status",
         value_fn=lambda data: data["extra_lte_status"].get("lte_dl_mcs"),
+    ),
+    TPLinkSensorEntityDescription(
+        key="lte_anchor_ul_mcs",
+        name="LTE UL MCS",
+        icon="mdi:numeric",
+        state_class=SensorStateClass.MEASUREMENT,
+        sensor_type="extra_lte_status",
+        value_fn=lambda data: data["extra_lte_status"].get("lte_ul_mcs"),
+    ),
+    TPLinkSensorEntityDescription(
+        key="lte_anchor_dl_mod",
+        name="LTE DL Modulation",
+        icon="mdi:speedometer",
+        sensor_type="extra_lte_status",
+        value_fn=lambda data: data["extra_lte_status"].get("lte_dl_mod"),
+    ),
+    TPLinkSensorEntityDescription(
+        key="lte_anchor_ul_mod",
+        name="LTE UL Modulation",
+        icon="mdi:speedometer",
+        sensor_type="extra_lte_status",
+        value_fn=lambda data: data["extra_lte_status"].get("lte_ul_mod"),
+    ),
+    TPLinkSensorEntityDescription(
+        key="lte_anchor_cqi",
+        name="LTE CQI",
+        icon="mdi:quality-high",
+        state_class=SensorStateClass.MEASUREMENT,
+        sensor_type="extra_lte_status",
+        value_fn=lambda data: data["extra_lte_status"].get("lte_cqi"),
+    ),
+    TPLinkSensorEntityDescription(
+        key="lte_anchor_ri",
+        name="LTE RI",
+        icon="mdi:numeric",
+        state_class=SensorStateClass.MEASUREMENT,
+        sensor_type="extra_lte_status",
+        value_fn=lambda data: data["extra_lte_status"].get("lte_ri"),
+    ),
+    TPLinkSensorEntityDescription(
+        key="lte_anchor_pmi",
+        name="LTE PMI",
+        icon="mdi:numeric",
+        state_class=SensorStateClass.MEASUREMENT,
+        sensor_type="extra_lte_status",
+        value_fn=lambda data: data["extra_lte_status"].get("lte_pmi"),
+    ),
+    TPLinkSensorEntityDescription(
+        key="lte_anchor_tbs",
+        name="LTE TBS",
+        icon="mdi:numeric",
+        state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement="bits",
+        sensor_type="extra_lte_status",
+        value_fn=lambda data: data["extra_lte_status"].get("lte_tbs"),
+    ),
+    TPLinkSensorEntityDescription(
+        key="lte_anchor_tx_power",
+        name="LTE Transmit Power",
+        icon="mdi:transmission-tower-export",
+        state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement="dBm",
+        sensor_type="extra_lte_status",
+        value_fn=lambda data: data["extra_lte_status"].get("lte_tx_power"),
+    ),
+    TPLinkSensorEntityDescription(
+        key="lte_anchor_rbs",
+        name="LTE Resource Blocks",
+        icon="mdi:office-building-marker",
+        state_class=SensorStateClass.MEASUREMENT,
+        sensor_type="extra_lte_status",
+        value_fn=lambda data: data["extra_lte_status"].get("lte_rbs"),
     ),
     TPLinkSensorEntityDescription(
         key="lte_anchor_pci",
@@ -632,10 +724,13 @@ class TPLinkRouterSensor(CoordinatorEntity[TPLinkRouterDataUpdateCoordinator], S
         if key == "last_updated":
             return self.coordinator.last_update_success_time
 
-        # Special case: Uptime calculation (look in extra_lte_status now)
+        # Special case: Uptime calculation (return boot timestamp)
         if key in ["wan_uptime", "device_uptime"]:
-            uptime_secs_key = "wan_uptime_secs" if key == "wan_uptime" else "sys_uptime_secs"
-            uptime_seconds = self.coordinator.data["extra_lte_status"].get(uptime_secs_key)
+            uptime_seconds = None
+            if key == "wan_uptime":
+                uptime_seconds = self.coordinator.data["extra_lte_status"].get("wan_uptime_secs")
+            else:
+                uptime_seconds = self.coordinator.data["extra_lte_status"].get("sys_uptime_secs")
             
             if uptime_seconds is None:
                 return None
@@ -657,6 +752,7 @@ class TPLinkRouterSensor(CoordinatorEntity[TPLinkRouterDataUpdateCoordinator], S
         """Return device information with sub-device support."""
         host = self._entry.options[CONF_HOST]
         group = self.entity_description.group
+        
         main_identifiers = {(DOMAIN, self.coordinator.mac)} if self.coordinator.mac else {(DOMAIN, host)}
         
         if group == "main":
@@ -672,9 +768,17 @@ class TPLinkRouterSensor(CoordinatorEntity[TPLinkRouterDataUpdateCoordinator], S
                 "configuration_url": f"http://{host}",
             }
             
-        group_names = {"sms": "SMS", "wifi": "Wi-Fi", "data": "Data", "clients": "Clients"}
+        # Sub-device naming logic
+        group_names = {
+            "sms": "SMS",
+            "wifi": "Wi-Fi",
+            "data": "Data",
+            "clients": "Clients",
+        }
         display_group = group_names.get(group, group.capitalize())
         sub_name = f"{self._entry.title} {display_group}"
+        
+        # Consistent sub-device identifier using host/mac as prefix
         sub_id_prefix = self.coordinator.mac if self.coordinator.mac else host
         
         return {
