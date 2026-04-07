@@ -845,15 +845,9 @@ class TPLinkRouterSensor(
                 "connections": connections,
                 "name": self._entry.title,
                 "manufacturer": "TP-Link",
-                "model": self.coordinator.firmware.model
-                if self.coordinator.firmware
-                else "TP-Link Router",
-                "sw_version": self.coordinator.firmware.firmware_version
-                if self.coordinator.firmware
-                else None,
-                "hw_version": self.coordinator.firmware.hardware_version
-                if self.coordinator.firmware
-                else None,
+                "model": self.coordinator.model,
+                "sw_version": self.coordinator.sw_version,
+                "hw_version": self.coordinator.hw_version,
                 "configuration_url": f"http://{host}",
             }
 

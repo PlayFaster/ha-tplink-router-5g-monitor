@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.2.0] - 2026-04-07
+
+### Changed
+
+- **Modern Background Tasks**: Migrated the non-blocking startup sequence to the modern `entry.async_create_background_task` API. This ensures the setup task is formally tracked by Home Assistant, named for better debugging, and automatically cancelled if the integration is unloaded.
+
+### Fixed
+
+- **Domain Cleanup**: Standardized the integration unloading logic to ensure the `DOMAIN` key is scrubbed from Home Assistant's internal memory when no entries remain, preventing state fragmentation.
+- **Architectural Synchronization**: Aligned lifecycle and cleanup patterns across the entire "PlayFaster" router integration suite (ZTE, TP-Link, and WiFi Monitor).
+
 ## [1.1.0] - 2026-04-07
 
 ### Added

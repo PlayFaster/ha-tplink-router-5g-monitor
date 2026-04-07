@@ -252,16 +252,12 @@ class TPLinkPausePollingSwitch(
         else:
             main_identifiers = {(DOMAIN, f"host_{host}")}
 
-        model = (
-            self.coordinator.firmware.model
-            if self.coordinator.firmware
-            else "TP-Link Router"
-        )
-
         return {
             "identifiers": main_identifiers,
             "name": self._entry.title,
             "manufacturer": "TP-Link",
-            "model": model,
+            "model": self.coordinator.model,
+            "sw_version": self.coordinator.sw_version,
+            "hw_version": self.coordinator.hw_version,
             "configuration_url": f"http://{host}",
         }

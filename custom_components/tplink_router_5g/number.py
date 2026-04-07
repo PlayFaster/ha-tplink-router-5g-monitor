@@ -121,8 +121,8 @@ class TPLinkPollingInterval(NumberEntity):
             "identifiers": main_identifiers,
             "name": self._entry.title,
             "manufacturer": "TP-Link",
-            "model": self.coordinator.firmware.model
-            if self.coordinator.firmware
-            else "TP-Link Router",
+            "model": self.coordinator.model,
+            "sw_version": self.coordinator.sw_version,
+            "hw_version": self.coordinator.hw_version,
             "configuration_url": f"http://{host}",
         }

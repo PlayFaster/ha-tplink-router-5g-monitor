@@ -24,8 +24,16 @@ class TPLinkRouterDataUpdateCoordinator(DataUpdateCoordinator):
         self.entry = entry
         self.consecutive_failures = 0
         self.last_update_success_time = None
+
+        # Load hardware identity from persistent ConfigEntry data.
+        # This ensures device info is stable from boot.
+        self.model = entry.data.get("model", "TP-Link Router")
+        self.sw_version = entry.data.get("sw_version")
+        self.hw_version = entry.data.get("hw_version")
+        self.mac = entry.data.get("mac")
+
+        # Keep reference to raw firmware object for compatibility if needed
         self.firmware = None
-        self.mac = None
 
         scan_interval = entry.options.get(CONF_SCAN_INTERVAL, 120)
 
@@ -52,47 +60,49 @@ class TPLinkRouterDataUpdateCoordinator(DataUpdateCoordinator):
                 # Session Start
                 await self.api.login()
 
-                if not self.firmware:
-                    self.firmware = await self.api.get_firmware()
-                    await asyncio.sleep(0.5)
-
                 # 1. Main Status
                 status = await self.api.get_status()
                 if status and status.lan_macaddr:
                     self.mac = status.lan_macaddr
-                await asyncio.sleep(0.5)
 
-                # Check for firmware update
+                # 2. Firmware Info
                 new_fw = await self.api.get_firmware()
-                if new_fw and new_fw.firmware_version != self.firmware.firmware_version:
-                    _LOGGER.info(
-                        "%s: Firmware update detected: %s -> %s",
-                        self.entry.title,
-                        self.firmware.firmware_version,
-                        new_fw.firmware_version,
-                    )
-                    self.firmware = new_fw
-                    new_data = dict(self.entry.data)
-                    new_data.update(
-                        {
-                            "model": new_fw.model,
-                            "sw_version": new_fw.firmware_version,
-                            "hw_version": new_fw.hardware_version,
-                            "mac": self.mac,
-                        }
-                    )
-                    self.hass.config_entries.async_update_entry(
-                        self.entry, data=new_data
-                    )
+                self.firmware = new_fw
 
-                # 2. Consolidated LTE and 5G Metrics
+                if new_fw:
+                    # Check for metadata changes (e.g. firmware update)
+                    if (
+                        new_fw.firmware_version != self.sw_version
+                        or new_fw.model != self.model
+                    ):
+                        _LOGGER.info(
+                            "%s: Hardware metadata updated: %s (%s)",
+                            self.entry.title,
+                            new_fw.model,
+                            new_fw.firmware_version,
+                        )
+                        self.model = new_fw.model
+                        self.sw_version = new_fw.firmware_version
+                        self.hw_version = new_fw.hardware_version
+
+                        new_data = dict(self.entry.data)
+                        new_data.update(
+                            {
+                                "model": self.model,
+                                "sw_version": self.sw_version,
+                                "hw_version": self.hw_version,
+                                "mac": self.mac,
+                            }
+                        )
+                        self.hass.config_entries.async_update_entry(
+                            self.entry, data=new_data
+                        )
+
+                # 3. Consolidated LTE and 5G Metrics
                 lte_status, extra_lte = await self.api.get_lte_and_extra_status()
-                await asyncio.sleep(0.5)
 
-                # 3. Optional Info
+                # 4. Optional Info
                 ipv4_status = await self.api.get_ipv4_status()
-                await asyncio.sleep(0.5)
-
                 vpn_status = await self.api.get_vpn_status()
 
                 data = {
@@ -130,7 +140,7 @@ class TPLinkRouterDataUpdateCoordinator(DataUpdateCoordinator):
             _LOGGER.error("%s: Connection lost: %s", self.entry.title, err)
             raise UpdateFailed(f"Communication error: {err}") from err
         finally:
-            # Session End - Improved error handling
+            # Session End
             try:
                 await self.api.logout()
             except Exception as logout_err:

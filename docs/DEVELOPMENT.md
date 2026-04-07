@@ -45,15 +45,18 @@ The polling interval number entity uses a `translation_key` corresponding to `st
 To ensure Home Assistant starts instantly without waiting for router responses, the integration utilizes a "Persistent Identity" pattern.
 
 ### Discovery & Persistence
+
 - **Initial Setup**: During the Config Flow, a one-time hardware discovery is performed to fetch the Model, MAC address, and firmware versions.
 - **Storage**: This data is stored in the `ConfigEntry.data` dictionary (distinct from user credentials in `options`).
 - **Coordinator Initialization**: On subsequent restarts, the `ZTERouterDataUpdateCoordinator` initializes its `firmware` and `mac` attributes directly from this stored data.
 
 ### Instant Setup Lifecycle
+
 1. `async_setup_entry` initializes the API and Coordinator.
 2. Platforms are forwarded **immediately** without an initial blocking refresh.
 3. Entities register with the Device Registry using the pre-populated persistent metadata.
 4. The first actual data poll (sensors, LTE metrics) is triggered in a background task.
 
 ### Firmware Update Tracking
+
 The coordinator monitors the software version during every background poll. If a version mismatch is detected (e.g., after a manual router update), the integration automatically updates the `ConfigEntry` storage and refreshes the Device Registry info to ensure the UI remains accurate.

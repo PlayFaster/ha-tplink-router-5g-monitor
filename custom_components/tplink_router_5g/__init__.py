@@ -1,6 +1,5 @@
 """The TP-Link Router 5G integration."""
 
-import asyncio
 import logging
 
 from homeassistant.config_entries import ConfigEntry
@@ -59,14 +58,21 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                 "%s: Background initialization failed: %s", entry.title, err
             )
 
-    hass.async_create_task(_async_background_setup())
+    # Use the modern background task API for better lifecycle management
+    entry.async_create_background_task(
+        hass, _async_background_setup(), "tplink-router-setup"
+    )
 
     return True
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    """Unload a config entry."""
+    """Unload a config entry and release resources."""
     unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
     if unload_ok:
         hass.data[DOMAIN].pop(entry.entry_id)
+        # Standardized Cleanup: Remove the domain key if no entries remain
+        if not hass.data[DOMAIN]:
+            hass.data.pop(DOMAIN)
+
     return unload_ok
