@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.1.0] - 2026-04-07
+
+### Added
+
+- **WAN Uptime Sensor**: Restored the WAN Uptime sensor using the `MBB` interface uptime, converted to a stable Home Assistant timestamp (rounded to the minute).
+
+### Fixed
+
+- **Data Tracking**: Corrected "Monthly Data Remaining" logic to use `totalStatistics` subtracted from the data limit.
+- **Wi-Fi Control**: Fixed functional regressions in Wi-Fi toggles by adopting the `Connection` Enum and correcting internal property mapping (removing `wifi_` prefix from status checks).
+- **Task Automation**: Refactored VS Code `tasks.json` to use native `dependsOn` sequences, ensuring validation steps run reliably even after linting fixes.
+- **Test Suite**: Updated 56 unit tests to align with the improved API logic and Enum-based Wi-Fi control.
+
 ## [1.0.0] - 2026-04-06
 
 ### Added

@@ -59,6 +59,30 @@ def get_5g_data(client):
             print(f"5G RSRQ: {cell.get('SSRSRQ')} dB")
 ```
 
+## Retrieving WAN Uptime (MBB)
+
+Standard device uptime (`DEV2_SYS_STATUS`) often resets independently of the actual internet connection. For accurate monitoring, the **`DEV2_ADT_WAN`** OID provides the uptime specifically for the WAN interface.
+
+### Key Technical Details
+
+- **OID**: `DEV2_ADT_WAN`
+- **Operation**: Get List (`GL`)
+- **Key Attribute**: `X_TP_Uptime` (Uptime in seconds)
+- **Filtering**: Search for the entry where `name == "MBB"` (Mobile Broadband).
+
+### Implementation
+
+To ensure the Home Assistant UI remains stable, this uptime should be converted into a `TIMESTAMP` sensor representing the moment the connection was established.
+
+```python
+# Logic to calculate a stable timestamp (rounded to the minute)
+uptime_seconds = int(wan.get("X_TP_Uptime"))
+uptime_delta = timedelta(seconds=uptime_seconds)
+connected_at = dt_util.now() - uptime_delta
+# Rounding to the minute prevents the sensor state from "bouncing" on every poll
+stable_timestamp = connected_at.replace(second=0, microsecond=0)
+```
+
 ## Why Bridge Mode Matters
 
 If your router is in **Bridge Mode**, some standard status OIDs (like `DEV2_LTE_NET_STATUS`) may stop updating or report zeros. The list-based serving cell info OID remains active and accurate even in Bridge Mode, making it the most reliable source for signal monitoring.
