@@ -34,11 +34,16 @@ def test_sensor_lte_extra_value(mock_coordinator, mock_config_entry):
 def test_sensor_device_info(mock_coordinator, mock_config_entry):
     """Test device_info for main and sub devices."""
     mock_coordinator.mac = None  # Force host fallback
+    mock_coordinator.model = "NX510v"
+    mock_coordinator.sw_version = "1.0.0"
+
     description = next(d for d in SENSOR_TYPES if d.key == "cpu_used")
     sensor = TPLinkRouterSensor(mock_coordinator, mock_config_entry, description)
     info = sensor.device_info
     assert info["identifiers"] == {(DOMAIN, "host_192.168.253.1")}
     assert info["manufacturer"] == "TP-Link"
+    assert info["model"] == "NX510v"
+    assert info["sw_version"] == "1.0.0"
 
     description_data = next(d for d in SENSOR_TYPES if d.key == "daily_usage")
     sensor_data = TPLinkRouterSensor(

@@ -14,6 +14,15 @@ def mock_config_entry():
     mock_entry.title = "My TP-Link Router"
     mock_entry.options = {CONF_HOST: "192.168.253.1"}
     mock_entry.data = {}
+
+    # Mock async_create_background_task and close coroutine to avoid RuntimeWarning
+    def mock_create_background_task(hass, coro, name):
+        coro.close()
+        return MagicMock()
+
+    mock_entry.async_create_background_task = MagicMock(
+        side_effect=mock_create_background_task
+    )
     return mock_entry
 
 
@@ -24,6 +33,11 @@ def mock_coordinator():
     coordinator.data = {}
     coordinator.last_update_success_time = None
     coordinator.async_request_refresh = AsyncMock()
+    # Add flat identity attributes for modern tests
+    coordinator.model = "NX510v"
+    coordinator.sw_version = "1.0.0"
+    coordinator.hw_version = "V1"
+    coordinator.mac = "00:11:22:33:44:55"
     return coordinator
 
 

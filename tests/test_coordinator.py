@@ -31,12 +31,9 @@ async def test_coordinator_update_failure(mock_api, mock_config_entry):
         # Mock initial data to test "holding last known values"
         coordinator.data = {"old": "data"}
 
-        with (
-            patch(
-                "homeassistant.helpers.update_coordinator.DataUpdateCoordinator.__init__",
-                return_value=None,
-            ),
-            patch("asyncio.sleep", AsyncMock()),
+        with patch(
+            "homeassistant.helpers.update_coordinator.DataUpdateCoordinator.__init__",
+            return_value=None,
         ):
             # First failure: should return old data and log warning
             data = await coordinator._async_update_data()
@@ -78,12 +75,9 @@ async def test_coordinator_timeout(mock_api, mock_config_entry):
             hass, mock_config_entry, mock_api
         )
 
-        with (
-            patch(
-                "homeassistant.helpers.update_coordinator.DataUpdateCoordinator.__init__",
-                return_value=None,
-            ),
-            patch("asyncio.sleep", AsyncMock()),
+        with patch(
+            "homeassistant.helpers.update_coordinator.DataUpdateCoordinator.__init__",
+            return_value=None,
         ):
             # No old data, should raise UpdateFailed immediately
             with pytest.raises(UpdateFailed):
@@ -105,18 +99,17 @@ async def test_coordinator_update_success(mock_api, mock_config_entry):
         mock_extra = {"nr_rsrp": "-80"}
         mock_api.get_lte_and_extra_status.return_value = (mock_lte, mock_extra)
 
-        mock_api.get_firmware.return_value = MagicMock(model="NX510v")
+        mock_api.get_firmware.return_value = MagicMock(
+            model="NX510v", firmware_version="1.0.0", hardware_version="V1"
+        )
 
         coordinator = TPLinkRouterDataUpdateCoordinator(
             hass, mock_config_entry, mock_api
         )
 
-        with (
-            patch(
-                "homeassistant.helpers.update_coordinator.DataUpdateCoordinator.__init__",
-                return_value=None,
-            ),
-            patch("asyncio.sleep", AsyncMock()),
+        with patch(
+            "homeassistant.helpers.update_coordinator.DataUpdateCoordinator.__init__",
+            return_value=None,
         ):
             data = await coordinator._async_update_data()
 

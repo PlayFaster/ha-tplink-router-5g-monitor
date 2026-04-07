@@ -31,12 +31,6 @@ def mock_hass():
     hass.config_entries.async_unload_platforms = AsyncMock(return_value=True)
     hass.config_entries.async_update_entry = MagicMock()
     hass.services.async_register = MagicMock()
-
-    def mock_create_task(coro):
-        coro.close()
-        return MagicMock()
-
-    hass.async_create_task = MagicMock(side_effect=mock_create_task)
     return hass
 
 
@@ -62,7 +56,7 @@ async def test_setup_entry_success(mock_hass, mock_config_entry):
         assert isinstance(coordinator, TPLinkRouterDataUpdateCoordinator)
 
         mock_hass.config_entries.async_forward_entry_setups.assert_called_once()
-        mock_hass.async_create_task.assert_called_once()
+        mock_config_entry.async_create_background_task.assert_called_once()
         mock_hass.services.async_register.assert_called_once()
 
 
@@ -147,4 +141,4 @@ async def test_unload_entry_success(mock_hass, mock_config_entry):
     mock_hass.data = {DOMAIN: {"test_entry": mock_coordinator}}
 
     assert await async_unload_entry(mock_hass, mock_config_entry) is True
-    assert mock_hass.data[DOMAIN] == {}
+    assert DOMAIN not in mock_hass.data
