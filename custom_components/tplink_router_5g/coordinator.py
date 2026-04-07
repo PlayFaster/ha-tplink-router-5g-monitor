@@ -62,6 +62,29 @@ class TPLinkRouterDataUpdateCoordinator(DataUpdateCoordinator):
                     self.mac = status.lan_macaddr
                 await asyncio.sleep(0.5)
 
+                # Check for firmware update
+                new_fw = await self.api.get_firmware()
+                if new_fw and new_fw.firmware_version != self.firmware.firmware_version:
+                    _LOGGER.info(
+                        "%s: Firmware update detected: %s -> %s",
+                        self.entry.title,
+                        self.firmware.firmware_version,
+                        new_fw.firmware_version,
+                    )
+                    self.firmware = new_fw
+                    new_data = dict(self.entry.data)
+                    new_data.update(
+                        {
+                            "model": new_fw.model,
+                            "sw_version": new_fw.firmware_version,
+                            "hw_version": new_fw.hardware_version,
+                            "mac": self.mac,
+                        }
+                    )
+                    self.hass.config_entries.async_update_entry(
+                        self.entry, data=new_data
+                    )
+
                 # 2. Consolidated LTE and 5G Metrics
                 lte_status, extra_lte = await self.api.get_lte_and_extra_status()
                 await asyncio.sleep(0.5)

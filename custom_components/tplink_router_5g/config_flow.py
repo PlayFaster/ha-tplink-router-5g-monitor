@@ -31,7 +31,8 @@ def _user_schema(defaults: dict) -> vol.Schema:
     )
 
 
-async def _validate_credentials(user_input: dict) -> None:
+async def _validate_credentials(user_input: dict) -> dict:
+    """Validate router credentials and return hardware info."""
     api = TPLinkRouter5GAPI(
         user_input[CONF_HOST],
         user_input.get(CONF_USERNAME),
@@ -39,7 +40,17 @@ async def _validate_credentials(user_input: dict) -> None:
         user_input.get(CONF_VERIFY_SSL, False),
     )
     await api.login()
-    await api.logout()
+    try:
+        fw = await api.get_firmware()
+        status = await api.get_status()
+        return {
+            "model": fw.model if fw else "TP-Link Router",
+            "sw_version": fw.firmware_version if fw else None,
+            "hw_version": fw.hardware_version if fw else None,
+            "mac": status.lan_macaddr if status else None,
+        }
+    finally:
+        await api.logout()
 
 
 class TPLinkRouter5GConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
@@ -52,12 +63,12 @@ class TPLinkRouter5GConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         errors = {}
         if user_input is not None:
             try:
-                await _validate_credentials(user_input)
+                info = await _validate_credentials(user_input)
                 await self.async_set_unique_id(user_input[CONF_HOST])
                 self._abort_if_unique_id_configured()
                 return self.async_create_entry(
                     title=DEFAULT_NAME,
-                    data={},
+                    data=info,
                     options=user_input,
                 )
             except AbortFlow:

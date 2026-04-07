@@ -6,10 +6,16 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
+- **Persistent Metadata**: The integration now fetches and stores the hardware model, MAC address, and firmware versions in the `ConfigEntry` during setup. This ensures the Device Page is always populated correctly, even if the router is offline.
 - **WAN Uptime Sensor**: Restored the WAN Uptime sensor using the `MBB` interface uptime, converted to a stable Home Assistant timestamp (rounded to the minute).
+
+### Changed
+
+- **Non-Blocking Startup**: Removed the initial blocking data fetch during integration setup. Home Assistant now starts instantly, and the first data poll occurs in the background.
 
 ### Fixed
 
+- **Firmware Update Handling**: Added background logic to detect firmware version changes and automatically update the stored device metadata.
 - **Data Tracking**: Corrected "Monthly Data Remaining" logic to use `totalStatistics` subtracted from the data limit.
 - **Wi-Fi Control**: Fixed functional regressions in Wi-Fi toggles by adopting the `Connection` Enum and correcting internal property mapping (removing `wifi_` prefix from status checks).
 - **Task Automation**: Refactored VS Code `tasks.json` to use native `dependsOn` sequences, ensuring validation steps run reliably even after linting fixes.

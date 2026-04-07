@@ -1,5 +1,6 @@
 """The TP-Link Router 5G integration."""
 
+import asyncio
 import logging
 
 from homeassistant.config_entries import ConfigEntry
@@ -31,12 +32,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     )
 
     coordinator = TPLinkRouterDataUpdateCoordinator(hass, entry, api)
-
-    # Fetch initial data so device_info is populated before entities are added
-    try:
-        await coordinator.async_refresh()
-    except Exception as err:
-        _LOGGER.warning("%s: Initial data fetch failed: %s", entry.title, err)
 
     hass.data.setdefault(DOMAIN, {})
     hass.data[DOMAIN][entry.entry_id] = coordinator
