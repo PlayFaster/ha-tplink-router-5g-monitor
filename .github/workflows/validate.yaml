@@ -42,7 +42,6 @@ jobs:
 
       - name: HACS Validation
         uses: hacs/action@main
-        continue-on-error: true
         with:
           category: integration
 
@@ -107,8 +106,6 @@ jobs:
           hide-comment: false
           create-new-comment: false
           junitxml-path: ./pytest.xml
-          create-badge: true
-          badge-filename: coverage-badge.json
 
       - name: Extract Coverage Percentage
         id: extract_cov
@@ -157,7 +154,6 @@ jobs:
 
       - name: Check README Links
         uses: gaurav-nelson/github-action-markdown-link-check@v1
-        continue-on-error: true
         with:
           base-branch: main
           file-path: README.md
