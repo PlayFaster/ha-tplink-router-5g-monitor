@@ -32,7 +32,7 @@ def test_button_device_info(mock_coordinator, mock_config_entry):
     description = next(d for d in BUTTON_TYPES if d.key == "reboot")
     button = TPLinkRebootButton(mock_coordinator, mock_config_entry, description)
 
-    assert button.device_info["identifiers"] == {(DOMAIN, "host_192.168.253.1")}
+    assert button.device_info["identifiers"] == {(DOMAIN, "host_192.168.253.1_system")}
 
 
 @pytest.mark.asyncio

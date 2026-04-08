@@ -5,6 +5,7 @@
       "user": {
         "title": "Setup TP-Link Router 5G Monitor",
         "data": {
+          "name": "Device Name",
           "host": "IP Address",
           "username": "Username",
           "password": "Password",
@@ -26,6 +27,7 @@
       "init": {
         "title": "Reconfigure TP-Link Router 5G Monitor",
         "data": {
+          "name": "Device Name",
           "host": "IP Address",
           "username": "Username",
           "password": "Password",

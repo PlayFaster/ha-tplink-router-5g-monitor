@@ -25,7 +25,7 @@ class TPLinkWifiSwitchDescription(SwitchEntityDescription):
 
     wifi_connection: Connection
     property_name: str
-    group: str = "wifi"
+    group: str = "home_network"
 
 
 WIFI_SWITCHES: Final[tuple[TPLinkWifiSwitchDescription, ...]] = (
@@ -185,22 +185,27 @@ class TPLinkWifiSwitch(
         """Return device information with sub-device support."""
         host = self._entry.options[CONF_HOST]
         group = self.entity_description.group
+        sub_id_prefix = self.coordinator.mac if self.coordinator.mac else f"host_{host}"
 
-        if self.coordinator.mac:
-            main_identifiers = {(DOMAIN, self.coordinator.mac)}
-            sub_id_prefix = self.coordinator.mac
-        else:
-            main_identifiers = {(DOMAIN, f"host_{host}")}
-            sub_id_prefix = f"host_{host}"
-
-        identifiers_list = list(main_identifiers)
-        via_device = identifiers_list[0] if identifiers_list else (DOMAIN, host)
+        group_names = {
+            "system": "System",
+            "signal": "Signal",
+            "home_network": "Home Network",
+            "data": "Data",
+            "sms": "SMS",
+        }
+        display_group = group_names.get(group, group.capitalize())
+        sub_name = f"{self._entry.title} {display_group}"
 
         return {
             "identifiers": {(DOMAIN, f"{sub_id_prefix}_{group}")},
-            "name": f"{self._entry.title} Wi-Fi",
+            "name": sub_name,
             "manufacturer": "TP-Link",
-            "via_device": via_device,
+            "model": self.coordinator.model,
+            "sw_version": self.coordinator.sw_version,
+            "hw_version": self.coordinator.hw_version,
+            "configuration_url": f"http://{host}",
+            "via_device": (DOMAIN, f"{sub_id_prefix}_system"),
         }
 
 
@@ -247,14 +252,12 @@ class TPLinkPausePollingSwitch(
     def device_info(self):
         """Return device information linking to the main router device."""
         host = self._entry.options[CONF_HOST]
-        if self.coordinator.mac:
-            main_identifiers = {(DOMAIN, self.coordinator.mac)}
-        else:
-            main_identifiers = {(DOMAIN, f"host_{host}")}
+        sub_id_prefix = self.coordinator.mac if self.coordinator.mac else f"host_{host}"
+        sub_name = f"{self._entry.title} System"
 
         return {
-            "identifiers": main_identifiers,
-            "name": self._entry.title,
+            "identifiers": {(DOMAIN, f"{sub_id_prefix}_system")},
+            "name": sub_name,
             "manufacturer": "TP-Link",
             "model": self.coordinator.model,
             "sw_version": self.coordinator.sw_version,

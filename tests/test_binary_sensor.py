@@ -92,7 +92,7 @@ def test_binary_sensor_device_info(mock_coordinator, mock_config_entry):
     description = next(d for d in BINARY_SENSORS if d.key == "best_connection")
     sensor = TPLinkRouterBinarySensor(mock_coordinator, mock_config_entry, description)
     info = sensor.device_info
-    assert info["identifiers"] == {(DOMAIN, "host_192.168.253.1")}
+    assert info["identifiers"] == {(DOMAIN, "host_192.168.253.1_signal")}
     assert info["manufacturer"] == "TP-Link"
 
 

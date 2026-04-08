@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.1.0] - 2026-04-08
+
+### Added
+
+- **Custom User Naming**: Users can now define a custom prefix (e.g., "MyRouter") for all devices and entities during initial setup or via the Options flow.
+- **Tiered Sub-Devices**: Entities are now logically partitioned into five distinct sub-devices: `System`, `Signal`, `Home Network`, `Data`, and `SMS`.
+- **Expanded Data Validation**: Added guard band limits to all remaining numeric sensors, including Data Usage and Client Counts, to ensure invalid hardware data is rejected.
+
+### Changed
+
+- **Standardized Naming**: Entity and Device names now consistently follow the `[Custom Name] [Group]` pattern for improved readability and organization.
+- **Refactored Entity Grouping**: Migrated Wi-Fi controls to the `Home Network` group and polling controls to the `System` group to better align with hardware functions.
+
 ## [1.0.0] - 2026-04-08
 
 Initial GitHub release for this Home Assistant custom component specifically designed for the **TP-Link NX510v 5G Router**, focused on providing as much 5G/LTE signal data as possible, along with the standard router features.
@@ -17,13 +30,13 @@ Initial GitHub release for this Home Assistant custom component specifically des
 
 ### Changed
 
-- **Improved Signal Accuracy**: Applied precision scaling to signal metrics (Transmit Power, SNR) to reflect accurate real-world values.
-- **Diagnostic Categorization**: Technical and signal-specific sensors are now categorized as "Diagnostic" entities to keep the main UI decluttered.
+- **Diagnostic Categorization**: Static (or rarely changing) sensors are now categorized as "Diagnostic" entities to keep the main UI decluttered.
 - **Instant Startup**: Home Assistant now starts instantly without waiting for the router to respond; initial data is fetched quietly in the background.
 - **System Requirements**: This integration now requires **Home Assistant 2025.1.0** or newer.
 
 ### Fixed
 
+- **Corrected Power and SNR**: Applied correct scaling (deivide by 10) 5G Transmit Power, 5G SNR, and LTE Anchor SNR values.
 - **MCS Data Handling**: Improved support for advanced MCS states, preventing sensors from showing as "Unknown" during high-performance data transfers.
 - **Data Tracking**: Corrected "Monthly Data Remaining" logic based on monthly limits.
 - **Wi-Fi Control**: Fixed issues where specific Wi-Fi band toggles would occasionally fail.

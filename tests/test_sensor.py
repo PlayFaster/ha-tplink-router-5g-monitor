@@ -40,7 +40,7 @@ def test_sensor_device_info(mock_coordinator, mock_config_entry):
     description = next(d for d in SENSOR_TYPES if d.key == "cpu_used")
     sensor = TPLinkRouterSensor(mock_coordinator, mock_config_entry, description)
     info = sensor.device_info
-    assert info["identifiers"] == {(DOMAIN, "host_192.168.253.1")}
+    assert info["identifiers"] == {(DOMAIN, "host_192.168.253.1_system")}
     assert info["manufacturer"] == "TP-Link"
     assert info["model"] == "NX510v"
     assert info["sw_version"] == "1.0.0"

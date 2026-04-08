@@ -4,7 +4,13 @@ import logging
 
 import voluptuous as vol
 from homeassistant import config_entries
-from homeassistant.const import CONF_HOST, CONF_PASSWORD, CONF_USERNAME, CONF_VERIFY_SSL
+from homeassistant.const import (
+    CONF_HOST,
+    CONF_NAME,
+    CONF_PASSWORD,
+    CONF_USERNAME,
+    CONF_VERIFY_SSL,
+)
 from homeassistant.data_entry_flow import AbortFlow
 
 from .api import TPLinkRouter5GAPI
@@ -16,6 +22,7 @@ _LOGGER = logging.getLogger(__name__)
 def _user_schema(defaults: dict) -> vol.Schema:
     return vol.Schema(
         {
+            vol.Required(CONF_NAME, default=defaults.get(CONF_NAME, DEFAULT_NAME)): str,
             vol.Required(CONF_HOST, default=defaults.get(CONF_HOST, "")): str,
             vol.Optional(
                 CONF_USERNAME, default=defaults.get(CONF_USERNAME, "user")
@@ -67,7 +74,7 @@ class TPLinkRouter5GConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 await self.async_set_unique_id(user_input[CONF_HOST])
                 self._abort_if_unique_id_configured()
                 return self.async_create_entry(
-                    title=DEFAULT_NAME,
+                    title=user_input[CONF_NAME],
                     data=info,
                     options=user_input,
                 )
@@ -105,6 +112,10 @@ class TPLinkRouter5GOptionsFlow(config_entries.OptionsFlow):
                 await _validate_credentials(user_input)
                 updated_options = dict(self._entry.options)
                 updated_options.update(user_input)
+                # Update entry title if name changed
+                self.hass.config_entries.async_update_entry(
+                    self._entry, title=user_input[CONF_NAME]
+                )
                 return self.async_create_entry(title="", data=updated_options)
             except Exception as e:
                 _LOGGER.error("Update failed: %s", e)

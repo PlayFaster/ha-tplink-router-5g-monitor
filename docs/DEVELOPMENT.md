@@ -10,7 +10,8 @@ To provide a high-performance Home Assistant custom component for TP-Link 5G Rou
 
 - **HA Version**: Requires **2025.1.0+** for native `asyncio.timeout` support and modern config entry APIs.
 - **Asynchronous**: Native async/await throughout; library calls are offloaded to worker threads via `asyncio.to_thread`.
-- **Sub-Device Architecture**: Entities are grouped via unique identifiers into linked devices (Main Router, Data Usage, SMS, Wi-Fi, Clients) using Home Assistant's `via_device` chaining.
+- **Sub-Device Architecture (Option B)**: Entities are logically partitioned into five sub-devices for a clean UI: `System` (Root), `Signal`, `Home Network`, `Data`, and `SMS`. Each sub-device is explicitly linked via `via_device` to the `System` root.
+- **Custom User Naming (`CONF_NAME`)**: Users can define a custom prefix (e.g., "Home") during setup. This name acts as the prefix for all sub-device names and entity display names (e.g., "Home Signal RSRP").
 - **Flat Identity Pattern**: The coordinator maintains flat attributes (`model`, `sw_version`, `mac`) populated from `ConfigEntry.data` at boot. This ensures the Device Registry is stable and populated instantly, even if the router is offline.
 
 ### Core Files
@@ -61,5 +62,6 @@ To achieve a **0ms startup impact**, the integration treats persistent metadata 
 ### Discovery & Persistence
 
 - **Initial Setup**: During the configuration flow, a one-time "Identity Fetch" retrieves the Model, MAC, and Firmware versions.
-- **Storage**: This data is persisted in `ConfigEntry.data`.
+- **Custom Naming**: The `CONF_NAME` (default: "TP-Link Router") is captured during setup and persisted in `ConfigEntry.data`. It can be updated via the Options flow.
+- **Storage**: Hardware metadata is persisted in `ConfigEntry.data`.
 - **Initialization**: On Home Assistant restart, the `TPLinkRouterDataUpdateCoordinator` initializes its identity attributes directly from this memory-resident data before any network calls occur.
