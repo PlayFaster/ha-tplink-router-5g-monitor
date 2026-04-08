@@ -38,7 +38,12 @@ A Home Assistant integration specifically designed for the **TP-Link NX510v 5G R
 
 ### 📊 Comprehensive Monitoring
 
-- **Sub-Device Organization**: Entities are automatically grouped into logical devices: **Main Router**, **Data Usage**, **SMS**, **Wi-Fi**, and **Clients**.
+- **Sub-Device Organization**: Entities are automatically grouped into logical devices: **Data**, **Home Network**, **Signal**, **SMS**, and **System**.
+  - **Data**: Daily and monthly data usage, usage vs limit, current upload and download speeds.
+  - **Home Network**: Connected client totals, by type plus control switches to turn WiFI on and off.
+  - **Signal**: Extensive 5G and LTE signal data.
+  - **SMS**: Unread SMS count.
+  - **System**: Reboot button, Polling Controls, CPU & Memory used, LAN and WAN IP addresses.
 
 ### 📋 Essential Router Management (per original integration)
 
@@ -70,7 +75,7 @@ A Home Assistant integration specifically designed for the **TP-Link NX510v 5G R
 
 ## 📊 What You Get
 
-This integration provides **90+ entities** grouped into logical devices: **Main Router**, **Data Usage**, **SMS**, **Wi-Fi**, and **Clients**
+This integration provides **90+ entities** grouped into logical devices: **Data**, **Home Network**, **Signal**, **SMS**, and **System**
 
 | Type               | Count | Primary Functions                                |
 | :----------------- | :---- | :----------------------------------------------- |
@@ -83,7 +88,7 @@ This integration provides **90+ entities** grouped into logical devices: **Main 
 >
 > **Clean up your UI: Disable Unnecessary Devices or Entities**
 >
-> - If you are running in Bridge Mode you may not be interested in WiFi controls or client data.
+> - If you are running in Bridge Mode you may not be interested in Home Network (WiFi controls and client data).
 > - These devices and their entities can be disabled from the main device page per device - (⋮ menu) "Disable Device".
 > - Individual entities can, as always in Home Assistant, be disabled via the entity properties, or in bulk on the entities list page.
 
@@ -97,17 +102,13 @@ This integration provides **90+ entities** grouped into logical devices: **Main 
 
 ![Integration](.github/images/tplink_5g_integration_screen.png)
 
-| Config | Controls |
-| :-: | :-: |
-| ![Config](.github/images/tplink_5g_config_screen_mini.png) | ![Controls](.github/images/tplink_5g_control_screen_mini.png) |
-
-| Signal Data | Diagnostics |
+| Signal Data | Signal Diagnostics |
 | :-: | :-: |
 | ![Sensors](.github/images/tplink_5g_sensor_screen_mini.png) | ![Diagnostics](.github/images/tplink_5g_diagnostic_screen_mini.png) |
 
-| Data Usage | SMS Management |
-| :-: | :-: |
-| ![Data](.github/images/tplink_5g_data_screen_mini.png) | ![SMS](.github/images/tplink_5g_sms_screen_mini.png) |
+| System | Data | SMS Management |
+| :-: | :-: | :-: |
+| ![System](.github/images/tplink_5g_system_screen_mini.png) | ![Data](.github/images/tplink_5g_data_screen_mini.png) | ![SMS](.github/images/tplink_5g_sms_screen_mini.png) |
 
 ## ✨ Installation
 
@@ -132,6 +133,7 @@ This integration provides **90+ entities** grouped into logical devices: **Main 
 
 Setup is handled entirely via the UI under **Settings > Devices & Services > Add Integration**. You will need:
 
+- **Device Name**: A custom prefix for your devices and entities (e.g., "MyRouter").
 - **IP Address**: The local IP of your router (e.g., `192.168.1.1`).
 - **Username**: Usually `user` or `admin`.
 - **Password**: Your local admin password (not your TP-Link Cloud password).

@@ -2,11 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
-## [1.0.1] - Unreleased
+## [1.1.0] - 2026-04-08
 
 ### Added
 
-- **Expanded Data Validation**: Add guard band limits to all remaining numeric sensors, e.g. Data Usage, Client Counts, to ensure and invalid data is rejected.
+- **Custom User Naming**: Users can now define a custom prefix (e.g., "MyRouter") for all devices and entities during initial setup or via the Options flow.
+- **Tiered Sub-Devices**: Entities are now logically partitioned into five distinct sub-devices: `System`, `Signal`, `Home Network`, `Data`, and `SMS`.
+- **Expanded Data Validation**: Added guard band limits to all remaining numeric sensors, including Data Usage and Client Counts, to ensure invalid hardware data is rejected.
+
+### Changed
+
+- **Standardized Naming**: Entity and Device names now consistently follow the `[Custom Name] [Group]` pattern for improved readability and organization.
+- **Refactored Entity Grouping**: Migrated Wi-Fi controls to the `Home Network` group and polling controls to the `System` group to better align with hardware functions.
 
 ## [1.0.0] - 2026-04-08
 

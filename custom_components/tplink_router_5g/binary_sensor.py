@@ -28,7 +28,7 @@ _LOGGER = logging.getLogger(__name__)
 class TPLinkBinarySensorEntityDescription(BinarySensorEntityDescription):
     """Describes TP-Link binary sensor entity."""
 
-    group: str = "main"
+    group: str = "signal"
 
 
 BINARY_SENSORS: Final[tuple[TPLinkBinarySensorEntityDescription, ...]] = (
@@ -38,21 +38,21 @@ BINARY_SENSORS: Final[tuple[TPLinkBinarySensorEntityDescription, ...]] = (
         icon="mdi:star-check",
         device_class=BinarySensorDeviceClass.CONNECTIVITY,
         entity_category=EntityCategory.DIAGNOSTIC,
-        group="main",
+        group="signal",
     ),
     TPLinkBinarySensorEntityDescription(
         key="endc_support",
         name="5G ENDC Support",
         icon="mdi:signal-5g",
         entity_category=EntityCategory.DIAGNOSTIC,
-        group="main",
+        group="signal",
     ),
     TPLinkBinarySensorEntityDescription(
         key="roaming",
         name="Roaming Status",
         icon="mdi:airplane",
         entity_category=EntityCategory.DIAGNOSTIC,
-        group="main",
+        group="signal",
     ),
 )
 
@@ -98,15 +98,11 @@ class TPLinkRouterBinarySensor(
 
         if key == "best_connection":
             # Option D: Hybrid Potential Logic
-            # Reflects the potential for a best connection even when idle.
-            # Requires ENDC Support AND (Good LTE Power OR Quality)
-            # AND (Good 5G Power OR Quality)
             endc = extra.get("endc_support") == "1"
             if not endc:
                 return False
 
             lte_rsrp = extra.get("lte_rsrp")
-            # Raw SNR from OID is 10x the actual dB value
             lte_snr_raw = extra.get("lte_snr")
             lte_snr = 0.1 * lte_snr_raw if lte_snr_raw is not None else None
 
@@ -133,20 +129,28 @@ class TPLinkRouterBinarySensor(
 
     @property
     def device_info(self):
-        """Return device information linking to the main router device."""
+        """Return device information with sub-device support."""
         host = self._entry.options[CONF_HOST]
-        main_identifiers = (
-            {(DOMAIN, self.coordinator.mac)}
-            if self.coordinator.mac
-            else {(DOMAIN, f"host_{host}")}
-        )
+        group = self.entity_description.group
+        sub_id_prefix = self.coordinator.mac if self.coordinator.mac else f"host_{host}"
+
+        group_names = {
+            "system": "System",
+            "signal": "Signal",
+            "home_network": "Home Network",
+            "data": "Data",
+            "sms": "SMS",
+        }
+        display_group = group_names.get(group, group.capitalize())
+        sub_name = f"{self._entry.title} {display_group}"
 
         return {
-            "identifiers": main_identifiers,
-            "name": self._entry.title,
+            "identifiers": {(DOMAIN, f"{sub_id_prefix}_{group}")},
+            "name": sub_name,
             "manufacturer": "TP-Link",
             "model": self.coordinator.model,
             "sw_version": self.coordinator.sw_version,
             "hw_version": self.coordinator.hw_version,
             "configuration_url": f"http://{host}",
+            "via_device": (DOMAIN, f"{sub_id_prefix}_system"),
         }

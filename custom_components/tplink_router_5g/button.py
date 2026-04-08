@@ -26,7 +26,7 @@ _LOGGER = logging.getLogger(__name__)
 class TPLinkButtonEntityDescription(ButtonEntityDescription):
     """Describes TP-Link button entity."""
 
-    group: str = "main"
+    group: str = "system"
 
 
 BUTTON_TYPES = (
@@ -35,7 +35,7 @@ BUTTON_TYPES = (
         name="Reboot",
         icon="mdi:restart",
         device_class=ButtonDeviceClass.RESTART,
-        group="main",
+        group="system",
     ),
 )
 
@@ -85,15 +85,12 @@ class TPLinkRebootButton(
     def device_info(self):
         """Return device information linking to the main router device."""
         host = self._entry.options[CONF_HOST]
-        main_identifiers = (
-            {(DOMAIN, self.coordinator.mac)}
-            if self.coordinator.mac
-            else {(DOMAIN, f"host_{host}")}
-        )
+        sub_id_prefix = self.coordinator.mac if self.coordinator.mac else f"host_{host}"
+        sub_name = f"{self._entry.title} System"
 
         return {
-            "identifiers": main_identifiers,
-            "name": self._entry.title,
+            "identifiers": {(DOMAIN, f"{sub_id_prefix}_system")},
+            "name": sub_name,
             "manufacturer": "TP-Link",
             "model": self.coordinator.model,
             "sw_version": self.coordinator.sw_version,

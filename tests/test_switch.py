@@ -90,8 +90,8 @@ def test_wifi_switch_device_info_mac(mock_coordinator, mock_config_entry):
 
     mock_coordinator.mac = "AA:BB:CC:DD:EE:FF"
     info = switch.device_info
-    assert info["identifiers"] == {(DOMAIN, "AA:BB:CC:DD:EE:FF_wifi")}
-    assert info["via_device"] == (DOMAIN, "AA:BB:CC:DD:EE:FF")
+    assert info["identifiers"] == {(DOMAIN, "AA:BB:CC:DD:EE:FF_home_network")}
+    assert info["via_device"] == (DOMAIN, "AA:BB:CC:DD:EE:FF_system")
 
 
 def test_wifi_switch_device_info_no_mac(mock_coordinator, mock_config_entry):
@@ -103,11 +103,11 @@ def test_wifi_switch_device_info_no_mac(mock_coordinator, mock_config_entry):
     info = switch.device_info
 
     # Check identifiers
-    expected_id = "host_192.168.253.1_wifi"
+    expected_id = "host_192.168.253.1_home_network"
     assert info["identifiers"] == {(DOMAIN, expected_id)}
 
     # Check via_device
-    expected_via = (DOMAIN, "host_192.168.253.1")
+    expected_via = (DOMAIN, "host_192.168.253.1_system")
     assert info["via_device"] == expected_via
 
 
@@ -138,11 +138,11 @@ def test_pause_polling_switch_device_info(mock_coordinator, mock_config_entry):
 
     # 1. With MAC
     mock_coordinator.mac = "AA:BB:CC"
-    assert switch.device_info["identifiers"] == {(DOMAIN, "AA:BB:CC")}
+    assert switch.device_info["identifiers"] == {(DOMAIN, "AA:BB:CC_system")}
 
     # 2. No MAC
     mock_coordinator.mac = None
-    assert switch.device_info["identifiers"] == {(DOMAIN, "host_192.168.253.1")}
+    assert switch.device_info["identifiers"] == {(DOMAIN, "host_192.168.253.1_system")}
 
 
 @pytest.mark.asyncio

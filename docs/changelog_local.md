@@ -6,6 +6,9 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
+- **Custom User Naming**: Users can now define a custom prefix (e.g., "MyRouter") for all devices and entities during initial setup or via the Options flow.
+- **Tiered Sub-Device Architecture**: Entities are now logically partitioned into five distinct sub-devices: `System`, `Signal`, `Home Network`, `Data`, and `SMS`.
+- **Improved Registry Hierarchy**: All sub-devices now explicitly use `via_device` linking to the `System` root device, ensuring a clean and structured representation in the Home Assistant device registry.
 - **Expanded Data Validation**: Guard bands now protect all numeric sensors, including Data Usage (Daily/Monthly/Remaining), ensuring long-term statistics remain clean from negative values or corruption spikes.
 - **Realistic Resource Caps**: Added safety limits for data throughput (10Gbps) and client counts (max 512) to improve dashboard stability.
 - **Physical Range Enforcement**: Technical identifiers (PCI, ARFCN) are now validated against industry-standard ranges to filter out invalid OID data.
@@ -13,6 +16,10 @@ All notable changes to this project will be documented in this file.
 - **Data Integrity Protection**: Specifically hardened the Data Usage platform to ignore negative values or 100TB+ spikes, protecting Home Assistant's internal database from corrupted OID data.
 - **ID Validation**: Applied physical limits to PCI (0-1007) and ARFCN (up to 3.3M) to filter hardware-specific reporting gaps.
 
+### Changed
+
+- **Standardized Naming**: Entity and Device names now consistently follow the `[Custom Name] [Group]` pattern for improved readability and organization.
+- **Refactored Entity Grouping**: Migrated Wi-Fi controls to the `Home Network` group and polling controls to the `System` group to better align with hardware functions.
 ### Fixed
 
 - **Code Integrity**: Resolved a startup SyntaxError and cleaned up duplicate entity definitions in the sensor platform.
