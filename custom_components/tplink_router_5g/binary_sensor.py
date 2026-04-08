@@ -99,7 +99,8 @@ class TPLinkRouterBinarySensor(
         if key == "best_connection":
             # Option D: Hybrid Potential Logic
             # Reflects the potential for a best connection even when idle.
-            # Requires ENDC Support AND (Good LTE Power OR Quality) AND (Good 5G Power OR Quality)
+            # Requires ENDC Support AND (Good LTE Power OR Quality)
+            # AND (Good 5G Power OR Quality)
             endc = extra.get("endc_support") == "1"
             if not endc:
                 return False

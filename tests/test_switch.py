@@ -53,6 +53,22 @@ async def test_wifi_switch_error(mock_coordinator, mock_config_entry):
 
 
 @pytest.mark.asyncio
+async def test_wifi_switch_turn_off_error(mock_coordinator, mock_config_entry):
+    """Test error handling in wifi switch turn off."""
+    description = next(d for d in WIFI_SWITCHES if d.key == "wifi_2g_main")
+    switch = TPLinkWifiSwitch(mock_coordinator, mock_config_entry, description)
+
+    mock_coordinator.api.login = AsyncMock()
+    mock_coordinator.api.logout = AsyncMock()
+    mock_coordinator.api.set_wifi = AsyncMock(side_effect=Exception("Off fail"))
+
+    with pytest.raises(Exception, match="Off fail"):
+        await switch.async_turn_off()
+
+    mock_coordinator.api.logout.assert_called_once()
+
+
+@pytest.mark.asyncio
 async def test_wifi_switch_no_status(mock_coordinator, mock_config_entry):
     """Test is_on when status data is missing."""
     description = next(d for d in WIFI_SWITCHES if d.key == "wifi_2g_main")
@@ -78,6 +94,17 @@ def test_wifi_switch_device_info_mac(mock_coordinator, mock_config_entry):
     assert info["via_device"] == (DOMAIN, "AA:BB:CC:DD:EE:FF")
 
 
+def test_wifi_switch_device_info_no_mac(mock_coordinator, mock_config_entry):
+    """Test device_info when MAC is NOT available."""
+    description = next(d for d in WIFI_SWITCHES if d.key == "wifi_2g_main")
+    switch = TPLinkWifiSwitch(mock_coordinator, mock_config_entry, description)
+
+    mock_coordinator.mac = None
+    info = switch.device_info
+    assert info["identifiers"] == {(DOMAIN, "host_192.168.253.1_wifi")}
+    assert info["via_device"] == (DOMAIN, "host_192.168.253.1")
+
+
 @pytest.mark.asyncio
 async def test_pause_polling_switch(mock_coordinator, mock_config_entry):
     """Test turning the pause switch on and off."""
@@ -97,6 +124,19 @@ async def test_pause_polling_switch(mock_coordinator, mock_config_entry):
     _args, kwargs = switch.hass.config_entries.async_update_entry.call_args
     assert kwargs["options"][CONF_STOP_POLLING] is False
     mock_coordinator.async_request_refresh.assert_called_once()
+
+
+def test_pause_polling_switch_device_info(mock_coordinator, mock_config_entry):
+    """Test device_info for pause polling switch."""
+    switch = TPLinkPausePollingSwitch(mock_coordinator, mock_config_entry)
+
+    # 1. With MAC
+    mock_coordinator.mac = "AA:BB:CC"
+    assert switch.device_info["identifiers"] == {(DOMAIN, "AA:BB:CC")}
+
+    # 2. No MAC
+    mock_coordinator.mac = None
+    assert switch.device_info["identifiers"] == {(DOMAIN, "host_192.168.253.1")}
 
 
 @pytest.mark.asyncio

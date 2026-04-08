@@ -118,3 +118,31 @@ async def test_coordinator_update_success(mock_api, mock_config_entry):
             assert data["extra_lte_status"]["nr_rsrp"] == "-80"
             assert coordinator.consecutive_failures == 0
             assert coordinator.mac == "00:11:22:33:44:55"
+
+
+@pytest.mark.asyncio
+async def test_coordinator_hardware_info_change(mock_api, mock_config_entry):
+    """Test updating hardware info when it changes on the router."""
+    hass = MagicMock()
+    with patch("homeassistant.helpers.frame._hass", hass):
+        mock_api.get_firmware.return_value = MagicMock(
+            model="NewModel", firmware_version="2.0.0", hardware_version="V2"
+        )
+        mock_api.get_status.return_value = MagicMock(lan_macaddr="00:11:22:33:44:55")
+        mock_api.get_lte_and_extra_status.return_value = (MagicMock(), {})
+
+        coordinator = TPLinkRouterDataUpdateCoordinator(
+            hass, mock_config_entry, mock_api
+        )
+        coordinator.sw_version = "1.0.0"
+        coordinator.model = "OldModel"
+        coordinator._fw_poll_counter = 10  # Trigger firmware poll
+
+        with patch(
+            "homeassistant.helpers.update_coordinator.DataUpdateCoordinator.__init__",
+            return_value=None,
+        ):
+            await coordinator._async_update_data()
+            assert coordinator.sw_version == "2.0.0"
+            assert coordinator.model == "NewModel"
+            hass.config_entries.async_update_entry.assert_called_once()

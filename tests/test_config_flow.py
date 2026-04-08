@@ -25,10 +25,14 @@ async def test_validate_credentials_success():
         mock_api = mock_api_class.return_value
         mock_api.login = AsyncMock()
         mock_api.logout = AsyncMock()
+        mock_api.get_firmware = AsyncMock(return_value=MagicMock())
+        mock_api.get_status = AsyncMock(return_value=MagicMock())
 
         await _validate_credentials(user_input)
         mock_api.login.assert_called_once()
         mock_api.logout.assert_called_once()
+        mock_api.get_firmware.assert_called_once()
+        mock_api.get_status.assert_called_once()
 
 
 @pytest.mark.asyncio

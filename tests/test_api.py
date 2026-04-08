@@ -48,6 +48,15 @@ def test_api_init():
 
 
 @pytest.mark.asyncio
+async def test_api_logout_no_client():
+    """Test logout when client is not initialized."""
+    api = TPLinkRouter5GAPI("192.168.253.1", "admin", "password")
+    api.client = None
+    # Should return early and not crash
+    await api.logout()
+
+
+@pytest.mark.asyncio
 async def test_api_logout_error():
     """Test logout with an exception."""
     api = TPLinkRouter5GAPI("192.168.253.1", "admin", "password")
@@ -336,3 +345,117 @@ async def test_api_get_lte_cell_skipped():
         assert extra["lte_band"] == "20"
         assert extra["lte_dl_mod"] == "64QAM"
         assert extra["lte_ul_bw"] == 10
+
+
+@pytest.mark.asyncio
+async def test_api_get_lte_exhaustive():
+    """Exhaustive test of get_lte_and_extra_status for maximum coverage."""
+    api = TPLinkRouter5GAPI("192.168.253.1", "admin", "password")
+    with patch(
+        "custom_components.tplink_router_5g.api.TplinkRouterProvider.get_client"
+    ) as mock_client:
+        client = mock_client.return_value
+        client.req_act = MagicMock()
+        client.ActItem = MagicMock()
+        client.ActItem.GET = "GET"
+        client.ActItem.GL = "GL"
+
+        mock_values = [
+            # 0: Link Config (Roaming, ENDC)
+            {
+                "roamingStatus": "1",
+                "endcStatus": "0",
+            },
+            # 1: Data Usage (Limit=0, Daily Usage)
+            {
+                "limitation": "0",
+                "dailyFlow": "500",
+                "totalStatistics": "1000",
+                "paymentDay": "15",
+            },
+            # 2: Net Status (SMS Results, Reg/Srv Status)
+            {
+                "smsSendResult": "1",  # Fail
+                "smsSendCause": "123",
+                "regStat": "5",  # Roaming
+                "srvStat": "1",  # Limited
+            },
+            # 3: ISP
+            {"ispName": "ExhaustiveISP"},
+            # 4: Cells (All Keys)
+            [
+                {
+                    "cellConnectionStatus": "1",
+                    "networkType": "8",  # NR
+                    "SSRSRP": "-85",
+                    "SSRSRQ": "-12",
+                    "SSSINR": "150",
+                    "RSSI": "-70",
+                    "band": "n78",
+                    "PCI": "100",
+                    "TAC": "200",
+                    "cid": "300",
+                    "ARFCN": "400",
+                    "downlinkModType": "256QAM",
+                    "uplinkModType": "64QAM",
+                    "downBandWidth": "100000",
+                    "upBandWidth": "50000",
+                    "downFreq": "3500000",
+                    "upFreq": "3400000",
+                    "downMCS": "28",
+                    "upMCS": "20",
+                    "CQI": "15",
+                    "RI": "4",
+                    "PMI": "1",
+                    "tbSize": "1000",
+                    "txPowerPUCCH": "23",
+                    "numRbs": "100",
+                    "nodeBId": "1234",
+                    "CGI": "5678",
+                    "signalStrength": "3",
+                }
+            ],
+            # 5: WAN Status
+            [
+                {"name": "MBB", "X_TP_Uptime": "3600"},
+                {"name": "OTHER", "X_TP_Uptime": "0"},
+            ],
+        ]
+        client.req_act.return_value = (None, mock_values)
+
+        _lte, extra = await api.get_lte_and_extra_status()
+
+        assert extra["roaming"] == "1"
+        assert extra["daily_usage"] == 500
+        assert "data_left" not in extra  # limit is 0
+        assert extra["sms_send_result"] == "Fail"
+        assert extra["sms_send_cause"] == "Error 123"
+        assert extra["registration_status"] == "Roaming"
+        assert extra["service_status"] == "Limited"
+        assert extra["nr_rssi"] == -70
+        assert extra["nr_dl_bw"] == 100
+        assert extra["nr_signal_pct"] == 75
+        assert extra["wan_uptime"] == 3600
+
+
+@pytest.mark.asyncio
+async def test_api_get_lte_parsing_error():
+    """Test get_lte_and_extra_status with parsing errors."""
+    api = TPLinkRouter5GAPI("192.168.253.1", "admin", "password")
+    with patch(
+        "custom_components.tplink_router_5g.api.TplinkRouterProvider.get_client"
+    ) as mock_client:
+        client = mock_client.return_value
+        client.req_act = MagicMock()
+        client.ActItem = MagicMock()
+
+        # Trigger TypeError/AttributeError by passing an int where dict expected
+        mock_values = [
+            None,
+            123,
+        ]  # 123.get() will trigger AttributeError
+        client.req_act.return_value = (None, mock_values)
+
+        # Should log error and return
+        _lte, extra = await api.get_lte_and_extra_status()
+        assert extra == {}

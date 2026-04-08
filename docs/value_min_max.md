@@ -2,7 +2,7 @@
 
 To ensure the Home Assistant UI remains clean and professional, we apply "Guard Bands" to incoming router data. If a value falls outside these realistic physical limits, the sensor is marked as `Unavailable` to prevent misleading spikes or "ghost" zeros.
 
-## Guard Band Strategy (Option C)
+## Guard Band Strategy
 
 We use a **Declarative Validation** approach. Limits are defined directly within the `EntityDescription` for each sensor. The base sensor class automatically enforces these bounds before passing the value to Home Assistant.
 
@@ -20,6 +20,7 @@ We use a **Declarative Validation** approach. Limits are defined directly within
 | :----------------- | :--------------- | :--- | :-- | :------------------------ |
 | **Signal Power**   | RSRP (5G/LTE)    | -140 | -40 | Set to `Unavailable`      |
 |                    | RSRQ (5G/LTE)    | -25  | 0   | Set to `Unavailable`      |
+|                    | RSSI (5G)        | -125 | -20 | Set to `Unavailable`      |
 |                    | RSSI (LTE)       | -120 | -20 | Set to `Unavailable`      |
 | **Signal Quality** | SNR / SINR       | -10  | 45  | Set to `Unavailable`      |
 |                    | CQI              | 1    | 15  | Set to `Unknown`          |

@@ -6,7 +6,7 @@ The "Best Connection" binary sensor in this integration is designed to reflect t
 
 Many 5G routers (including the Aginet NX510v) aggressively put secondary carriers (Carrier Aggregation) and 5G legs into low-power "sleep" modes when no data is being transferred. If we only checked for "Active CA," the sensor would constantly flicker between On and Off, which is unhelpful for monitoring overall network health.
 
-## The Solution: Option D (Hybrid Potential)
+## The Solution: Hybrid Potential
 
 We use a hybrid algorithm that balances **Raw Power** (RSRP) against **Signal Purity** (SNR). This ensures that if the signal is strong (near a tower) OR exceptionally clean (far from a tower but no interference), the connection is considered "Best."
 

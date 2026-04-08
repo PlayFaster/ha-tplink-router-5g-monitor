@@ -371,6 +371,18 @@ EXTRA_LTE_SENSOR_TYPES: Final[tuple[TPLinkSensorEntityDescription, ...]] = (
         value_fn=lambda data: data["extra_lte_status"].get("nr_rsrp"),
     ),
     TPLinkSensorEntityDescription(
+        key="nr_rssi",
+        name="5G RSSI",
+        icon="mdi:signal-cellular-3",
+        state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement=SIGNAL_STRENGTH_DECIBELS_MILLIWATT,
+        device_class=SensorDeviceClass.SIGNAL_STRENGTH,
+        sensor_type="extra_lte_status",
+        min_limit=-125,
+        max_limit=-20,
+        value_fn=lambda data: data["extra_lte_status"].get("nr_rssi"),
+    ),
+    TPLinkSensorEntityDescription(
         key="nr_rsrq",
         name="5G RSRQ",
         icon="mdi:signal-cellular-3",
@@ -413,6 +425,7 @@ EXTRA_LTE_SENSOR_TYPES: Final[tuple[TPLinkSensorEntityDescription, ...]] = (
         name="5G Band",
         icon="mdi:radio-tower",
         sensor_type="extra_lte_status",
+        entity_category=EntityCategory.DIAGNOSTIC,
         value_fn=lambda data: (
             f"N{data['extra_lte_status'].get('nr_band')}"
             if data["extra_lte_status"].get("nr_band")
@@ -460,6 +473,7 @@ EXTRA_LTE_SENSOR_TYPES: Final[tuple[TPLinkSensorEntityDescription, ...]] = (
         state_class=SensorStateClass.MEASUREMENT,
         native_unit_of_measurement="MHz",
         sensor_type="extra_lte_status",
+        entity_category=EntityCategory.DIAGNOSTIC,
         value_fn=lambda data: data["extra_lte_status"].get("nr_dl_bw"),
     ),
     TPLinkSensorEntityDescription(
@@ -469,6 +483,7 @@ EXTRA_LTE_SENSOR_TYPES: Final[tuple[TPLinkSensorEntityDescription, ...]] = (
         state_class=SensorStateClass.MEASUREMENT,
         native_unit_of_measurement="MHz",
         sensor_type="extra_lte_status",
+        entity_category=EntityCategory.DIAGNOSTIC,
         value_fn=lambda data: data["extra_lte_status"].get("nr_ul_bw"),
     ),
     TPLinkSensorEntityDescription(
@@ -630,6 +645,7 @@ EXTRA_LTE_SENSOR_TYPES: Final[tuple[TPLinkSensorEntityDescription, ...]] = (
         name="LTE Anchor Band",
         icon="mdi:radio-tower",
         sensor_type="extra_lte_status",
+        entity_category=EntityCategory.DIAGNOSTIC,
         value_fn=lambda data: (
             f"B{data['extra_lte_status'].get('lte_band')}"
             if data["extra_lte_status"].get("lte_band")
@@ -643,6 +659,7 @@ EXTRA_LTE_SENSOR_TYPES: Final[tuple[TPLinkSensorEntityDescription, ...]] = (
         state_class=SensorStateClass.MEASUREMENT,
         native_unit_of_measurement="MHz",
         sensor_type="extra_lte_status",
+        entity_category=EntityCategory.DIAGNOSTIC,
         value_fn=lambda data: data["extra_lte_status"].get("lte_dl_bw"),
     ),
     TPLinkSensorEntityDescription(
@@ -652,6 +669,7 @@ EXTRA_LTE_SENSOR_TYPES: Final[tuple[TPLinkSensorEntityDescription, ...]] = (
         state_class=SensorStateClass.MEASUREMENT,
         native_unit_of_measurement="MHz",
         sensor_type="extra_lte_status",
+        entity_category=EntityCategory.DIAGNOSTIC,
         value_fn=lambda data: data["extra_lte_status"].get("lte_ul_bw"),
     ),
     TPLinkSensorEntityDescription(

@@ -69,34 +69,33 @@ class TPLinkRouterDataUpdateCoordinator(DataUpdateCoordinator):
                 new_fw = await self.api.get_firmware()
                 self.firmware = new_fw
 
-                if new_fw:
+                if new_fw and (
+                    new_fw.firmware_version != self.sw_version
+                    or new_fw.model != self.model
+                ):
                     # Check for metadata changes (e.g. firmware update)
-                    if (
-                        new_fw.firmware_version != self.sw_version
-                        or new_fw.model != self.model
-                    ):
-                        _LOGGER.info(
-                            "%s: Hardware metadata updated: %s (%s)",
-                            self.entry.title,
-                            new_fw.model,
-                            new_fw.firmware_version,
-                        )
-                        self.model = new_fw.model
-                        self.sw_version = new_fw.firmware_version
-                        self.hw_version = new_fw.hardware_version
+                    _LOGGER.info(
+                        "%s: Hardware metadata updated: %s (%s)",
+                        self.entry.title,
+                        new_fw.model,
+                        new_fw.firmware_version,
+                    )
+                    self.model = new_fw.model
+                    self.sw_version = new_fw.firmware_version
+                    self.hw_version = new_fw.hardware_version
 
-                        new_data = dict(self.entry.data)
-                        new_data.update(
-                            {
-                                "model": self.model,
-                                "sw_version": self.sw_version,
-                                "hw_version": self.hw_version,
-                                "mac": self.mac,
-                            }
-                        )
-                        self.hass.config_entries.async_update_entry(
-                            self.entry, data=new_data
-                        )
+                    new_data = dict(self.entry.data)
+                    new_data.update(
+                        {
+                            "model": self.model,
+                            "sw_version": self.sw_version,
+                            "hw_version": self.hw_version,
+                            "mac": self.mac,
+                        }
+                    )
+                    self.hass.config_entries.async_update_entry(
+                        self.entry, data=new_data
+                    )
 
                 # 3. Consolidated LTE and 5G Metrics
                 lte_status, extra_lte = await self.api.get_lte_and_extra_status()

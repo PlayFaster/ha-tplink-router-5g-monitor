@@ -62,11 +62,21 @@ async def test_setup_entry_success(mock_hass, mock_config_entry):
 
 @pytest.mark.asyncio
 async def test_setup_entry_initial_fetch_failure(mock_hass, mock_config_entry):
-    """Test setup when initial fetch fails."""
+    """Test setup when initial fetch fails in background."""
     mock_config_entry.options = {
         "host": "192.168.253.1",
         "password": "pass",
     }
+
+    # Intercept the background task to run it manually
+    background_coro = None
+
+    def capture_background_task(hass, coro, name):
+        nonlocal background_coro
+        background_coro = coro
+        return MagicMock()
+
+    mock_config_entry.async_create_background_task.side_effect = capture_background_task
 
     with (
         patch("custom_components.tplink_router_5g.TPLinkRouter5GAPI"),
@@ -76,8 +86,12 @@ async def test_setup_entry_initial_fetch_failure(mock_hass, mock_config_entry):
         ),
         patch("homeassistant.helpers.frame._hass", mock_hass),
     ):
-        # Should still return True as we do background setup
+        # Should still return True
         assert await async_setup_entry(mock_hass, mock_config_entry) is True
+
+        # Now run the background task and ensure it handles failure
+        if background_coro:
+            await background_coro
 
 
 @pytest.mark.asyncio

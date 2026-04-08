@@ -4,10 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [1.0.0] - 2026-04-08
 
+Initial GitHub release for this Home Assistant custom component specifically designed for the **TP-Link NX510v 5G Router**,  focused  on providing as much 5G/LTE signal data as possible, along with the standard router features.
+
 ### Added
 
 - **Signal Guard Bands**: Implemented automatic validation for 50+ sensors. Impossible signal spikes or zero-values for specific metrics are now correctly filtered, keeping your dashboard clean and reliable.
-- **Potential-Based "Best Connection"**: The `Best Connection` binary sensor now uses a sophisticated hybrid algorithm. It correctly reflects your network's potential even when the router is idle, by balancing signal power and quality.
+- **Potential-Based "Best Connection"**: The `Best Connection` binary sensor now uses a hybrid algorithm. It correctly reflects your network's potential even when the router is idle, by balancing signal power and quality.
 - **Sub-Device Architecture**: Entities are now logically grouped into linked devices (Main Router, Data Usage, SMS, Wi-Fi, and Clients) for a cleaner interface.
 - **Deep 5G & LTE Metrics**: Comprehensive support for advanced signal diagnostics, including 5G (NR) and LTE Anchor cell frequencies, modulation (256QAM), MCS, and technical RF diagnostics.
 - **Persistent Metadata**: Hardware model, MAC address, and firmware versions are now stored within Home Assistant, ensuring device information remains stable even if the router is offline.
