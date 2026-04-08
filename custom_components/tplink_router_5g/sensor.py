@@ -212,6 +212,8 @@ SENSOR_TYPES: Final[tuple[TPLinkSensorEntityDescription, ...]] = (
         device_class=SensorDeviceClass.DATA_SIZE,
         sensor_type="extra_lte_status",
         group="data",
+        min_limit=0,
+        max_limit=109951162777600,  # 100 TB
         value_fn=lambda data: data["extra_lte_status"].get("daily_usage"),
     ),
     TPLinkSensorEntityDescription(
@@ -223,6 +225,8 @@ SENSOR_TYPES: Final[tuple[TPLinkSensorEntityDescription, ...]] = (
         device_class=SensorDeviceClass.DATA_SIZE,
         sensor_type="extra_lte_status",
         group="data",
+        min_limit=0,
+        max_limit=109951162777600,  # 100 TB
         value_fn=lambda data: data["extra_lte_status"].get("data_left"),
     ),
     TPLinkSensorEntityDescription(
@@ -233,6 +237,8 @@ SENSOR_TYPES: Final[tuple[TPLinkSensorEntityDescription, ...]] = (
         device_class=SensorDeviceClass.DATA_SIZE,
         sensor_type="extra_lte_status",
         group="data",
+        min_limit=0,
+        max_limit=109951162777600,  # 100 TB
         value_fn=lambda data: data["extra_lte_status"].get("usage_limit"),
     ),
     TPLinkSensorEntityDescription(
@@ -242,6 +248,8 @@ SENSOR_TYPES: Final[tuple[TPLinkSensorEntityDescription, ...]] = (
         sensor_type="extra_lte_status",
         group="data",
         entity_category=EntityCategory.DIAGNOSTIC,
+        min_limit=1,
+        max_limit=31,
         value_fn=lambda data: data["extra_lte_status"].get("payment_day"),
     ),
     TPLinkSensorEntityDescription(
@@ -549,6 +557,8 @@ EXTRA_LTE_SENSOR_TYPES: Final[tuple[TPLinkSensorEntityDescription, ...]] = (
         icon="mdi:transmission-tower",
         sensor_type="extra_lte_status",
         entity_category=EntityCategory.DIAGNOSTIC,
+        min_limit=0,
+        max_limit=1007,
         value_fn=lambda data: data["extra_lte_status"].get("nr_pci"),
     ),
     TPLinkSensorEntityDescription(
@@ -790,6 +800,8 @@ EXTRA_LTE_SENSOR_TYPES: Final[tuple[TPLinkSensorEntityDescription, ...]] = (
         icon="mdi:transmission-tower",
         sensor_type="extra_lte_status",
         entity_category=EntityCategory.DIAGNOSTIC,
+        min_limit=0,
+        max_limit=1007,
         value_fn=lambda data: data["extra_lte_status"].get("lte_pci"),
     ),
     TPLinkSensorEntityDescription(
@@ -798,6 +810,7 @@ EXTRA_LTE_SENSOR_TYPES: Final[tuple[TPLinkSensorEntityDescription, ...]] = (
         icon="mdi:transmission-tower",
         sensor_type="extra_lte_status",
         entity_category=EntityCategory.DIAGNOSTIC,
+        min_limit=1,
         value_fn=lambda data: data["extra_lte_status"].get("lte_tac"),
     ),
     TPLinkSensorEntityDescription(
@@ -806,6 +819,7 @@ EXTRA_LTE_SENSOR_TYPES: Final[tuple[TPLinkSensorEntityDescription, ...]] = (
         icon="mdi:transmission-tower",
         sensor_type="extra_lte_status",
         entity_category=EntityCategory.DIAGNOSTIC,
+        min_limit=1,
         value_fn=lambda data: data["extra_lte_status"].get("lte_cid"),
     ),
     TPLinkSensorEntityDescription(
@@ -814,6 +828,8 @@ EXTRA_LTE_SENSOR_TYPES: Final[tuple[TPLinkSensorEntityDescription, ...]] = (
         icon="mdi:radio-tower",
         sensor_type="extra_lte_status",
         entity_category=EntityCategory.DIAGNOSTIC,
+        min_limit=1,
+        max_limit=3300000,
         value_fn=lambda data: data["extra_lte_status"].get("lte_arfcn"),
     ),
     TPLinkSensorEntityDescription(

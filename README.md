@@ -63,6 +63,7 @@ A Home Assistant integration specifically designed for the **TP-Link NX510v 5G R
 
 ### 🏗️ Under the Hood
 
+- **Data Validation**: Router values are checked for validity (guard limits), with invalid sensors being marked as unknown.
 - **Zero-Blocking Startup**: Home Assistant starts instantly. Hardware identity is loaded from memory, while the first poll happens quietly in the background.
 - **Flat Identity Pattern**: Device information (Model, MAC, Version) remains stable and visible even if the router is temporarily offline.
 - **Native Resilience**: Built-in 30s timeouts and automatic retry logic ensure UI stability during intermittent network glitches.
