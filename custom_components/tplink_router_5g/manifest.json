@@ -8,5 +8,5 @@
   "iot_class": "local_polling",
   "issue_tracker": "https://github.com/PlayFaster/ha-tplink-router-5g-monitor/issues",
   "requirements": ["tplinkrouterc6u==5.17.1"],
-  "version": "1.0.0-rc3"
+  "version": "1.0.0-rc4"
 }
