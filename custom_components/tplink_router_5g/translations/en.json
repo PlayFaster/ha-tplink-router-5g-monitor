@@ -69,7 +69,6 @@
       "sms_send_result": { "name": "Last SMS Send Result" },
       "sms_send_cause": { "name": "Last SMS Send Cause" },
       "nr_rsrp": { "name": "5G RSRP" },
-      "nr_rssi": { "name": "5G RSSI" },
       "nr_rsrq": { "name": "5G RSRQ" },
       "nr_snr": { "name": "5G SNR" },
       "nr_signal_pct": { "name": "5G Signal Strength" },

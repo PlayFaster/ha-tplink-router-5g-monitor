@@ -97,10 +97,30 @@ class TPLinkRouterBinarySensor(
         extra = self.coordinator.data.get("extra_lte_status", {})
 
         if key == "best_connection":
-            # Best connection: 5G ENDC is supported AND NR DL Modulation is 256QAM
+            # Option D: Hybrid Potential Logic
+            # Reflects the potential for a best connection even when idle.
+            # Requires ENDC Support AND (Good LTE Power OR Quality) AND (Good 5G Power OR Quality)
             endc = extra.get("endc_support") == "1"
-            dl_mod = extra.get("nr_dl_mod") == "256QAM"
-            return endc and dl_mod
+            if not endc:
+                return False
+
+            lte_rsrp = extra.get("lte_rsrp")
+            # Raw SNR from OID is 10x the actual dB value
+            lte_snr_raw = extra.get("lte_snr")
+            lte_snr = 0.1 * lte_snr_raw if lte_snr_raw is not None else None
+
+            nr_rsrp = extra.get("nr_rsrp")
+            nr_snr_raw = extra.get("nr_snr")
+            nr_snr = 0.1 * nr_snr_raw if nr_snr_raw is not None else None
+
+            lte_healthy = (lte_rsrp is not None and lte_rsrp > -100) or (
+                lte_snr is not None and lte_snr > 15
+            )
+            nr_healthy = (nr_rsrp is not None and nr_rsrp > -105) or (
+                nr_snr is not None and nr_snr > 10
+            )
+
+            return endc and lte_healthy and nr_healthy
 
         if key == "endc_support":
             return extra.get("endc_support") == "1"

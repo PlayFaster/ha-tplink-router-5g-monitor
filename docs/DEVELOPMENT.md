@@ -2,61 +2,64 @@
 
 ## 1. Project Objective
 
-To provide a high-performance Home Assistant custom component for TP-Link 5G Routers (NX510v). The integration leverages the `tplinkrouterc6u` library to extract exhaustive technical metrics, usage data, and basic SMS controls.
+To provide a high-performance Home Assistant custom component for TP-Link 5G Routers (specifically the Aginet NX510v). The integration leverages the `tplinkrouterc6u` library to extract exhaustive technical metrics, usage data, and atomic SMS/management controls.
 
 ## 2. Architecture & Requirements
 
 ### Core Standards
 
-- **HA Version**: Requires **2025.1.0+** for native `asyncio.timeout` support.
-- **Asynchronous**: Native async/await throughout; library calls offloaded via `asyncio.to_thread`.
-- **Sub-Device Architecture**: Entities are grouped via MAC/Host identifiers into linked devices (Main, Data, SMS, Wi-Fi, Clients) using `via_device` references.
+- **HA Version**: Requires **2025.1.0+** for native `asyncio.timeout` support and modern config entry APIs.
+- **Asynchronous**: Native async/await throughout; library calls are offloaded to worker threads via `asyncio.to_thread`.
+- **Sub-Device Architecture**: Entities are grouped via unique identifiers into linked devices (Main Router, Data Usage, SMS, Wi-Fi, Clients) using Home Assistant's `via_device` chaining.
+- **Flat Identity Pattern**: The coordinator maintains flat attributes (`model`, `sw_version`, `mac`) populated from `ConfigEntry.data` at boot. This ensures the Device Registry is stable and populated instantly, even if the router is offline.
 
 ### Core Files
 
-- **`api.py`**: Atomic session management. Outgoing commands (SMS, Reboot, Wi-Fi) handle their own `login`/`logout` cycle.
-- **`coordinator.py`**: Centralized polling with a 30s global timeout and 0.5s "breathing" delays between OID requests. Default interval is 120s.
-- **`sensor.py` & `binary_sensor.py`**: Group diagnostic and technical metrics. All RF/technical metrics are marked as `EntityCategory.DIAGNOSTIC`.
+- **`api.py`**: Atomic session management. Outgoing commands (SMS, Reboot, Wi-Fi) handle their own `login`/`logout` cycle to prevent session exhaustion.
+- **`coordinator.py`**: Centralized polling engine with a 30s global timeout.
+- **`sensor.py`**: Implements a declarative `value_fn` callback architecture for technical metrics.
+- **`binary_sensor.py`**: Contains specialized logic for network health and connectivity status.
 
 ## 3. Implementation Details
 
-### Session Reliability
+### Data Integrity: Declarative Guard Bands
 
-To prevent session leaks or router lockups, all administrative commands are wrapped in `try-finally` blocks to ensure `logout` is called even if the command fails. outgoing services like `send_sms` are atomic.
+To protect Home Assistant's long-term statistics from "ghost" zeros or impossible raw data spikes (e.g., a 200dBm signal), we use a **Guard Band** system.
 
-### Validation & Quality
+- **Implementation**: `min_limit` and `max_limit` are defined directly in the `EntityDescription`.
+- **Logic**: The base sensor class verifies these bounds before passing the value to Home Assistant. If a value is outside the band, it is returned as `None` (`Unavailable`).
+- **Hardware Workarounds**: Specific metrics like `5G Cell ID` and `5G TAC` use a `min_limit: 1` to filter out hardware-specific "stuck at zero" reporting gaps.
 
-- **Testing**: A full Pytest suite resides in `tests/`. It mocks the API and Coordinator to verify state logic without physical hardware.
-- **Linting**: 100% compliant with `ruff` (PEP-8) and `yamllint`.
-- **Typing**: Strict type hinting is used for all public setup and update functions.
+### Advanced Logic: Potential-Based "Best Connection"
 
-## 4. Known Limitations
+The `Best Connection` binary sensor uses a hybrid algorithm (Option D) to reflect the **potential** for high-speed performance, even when the router is idle.
 
-### Uptime Reporting
+- **Why**: TP-Link routers often put Carrier Aggregation into "sleep" when quiet.
+- **Algorithm**: Turns ON if `5G ENDC Support` is active AND both the LTE and 5G legs meet minimum health thresholds for either Power (RSRP) or Quality (SNR).
+- **Documentation**: See `docs/best_connection.md` for the specific algorithm thresholds.
 
-Device and WAN uptime reporting via standard OIDs is inconsistent on current NX510v firmware. These sensors have been fully removed to prevent UI clutter. Documentation for future probing is available in `docs/finding_time.md`.
+### Modern Lifecycle Management
 
-### Translation Support
+- **Background Setup**: Integration startup uses `entry.async_create_background_task`. This ensures the setup sequence is formally tracked by Home Assistant and automatically cancelled if the integration is unloaded.
+- **Clean Unloading**: Standardized cleanup removes the `DOMAIN` key from `hass.data` if no entries remain, preventing memory fragmentation.
 
-The polling interval number entity uses a `translation_key` corresponding to `strings.json` for proper localization.
+## 4. Challenges & Successes
+
+### Uptime Discovery
+
+- **WAN (MBB) Uptime**: Successfully identified the `X_TP_Uptime` attribute within the `MBB` interface of the `DEV2_ADT_WAN` OID.
+- **Implementation**: The integration converts this raw seconds value into a stable Home Assistant `TIMESTAMP` rounded to the nearest minute, preventing UI "bouncing" caused by small polling offsets.
+
+### Signal Scaling
+
+Many technical OIDs (like SNR and Transmit Power) report raw integers that are 10x the actual value. The integration applies a 0.1 scaling factor and 1-decimal precision to these sensors to ensure accurate real-world representation.
 
 ## 5. Hardware Identity & Non-Blocking Startup
 
-To ensure Home Assistant starts instantly without waiting for router responses, the integration utilizes a "Persistent Identity" pattern.
+To achieve a **0ms startup impact**, the integration treats persistent metadata as the authoritative identity at boot.
 
 ### Discovery & Persistence
 
-- **Initial Setup**: During the Config Flow, a one-time hardware discovery is performed to fetch the Model, MAC address, and firmware versions.
-- **Storage**: This data is stored in the `ConfigEntry.data` dictionary (distinct from user credentials in `options`).
-- **Coordinator Initialization**: On subsequent restarts, the `ZTERouterDataUpdateCoordinator` initializes its `firmware` and `mac` attributes directly from this stored data.
-
-### Instant Setup Lifecycle
-
-1. `async_setup_entry` initializes the API and Coordinator.
-2. Platforms are forwarded **immediately** without an initial blocking refresh.
-3. Entities register with the Device Registry using the pre-populated persistent metadata.
-4. The first actual data poll (sensors, LTE metrics) is triggered in a background task.
-
-### Firmware Update Tracking
-
-The coordinator monitors the software version during every background poll. If a version mismatch is detected (e.g., after a manual router update), the integration automatically updates the `ConfigEntry` storage and refreshes the Device Registry info to ensure the UI remains accurate.
+- **Initial Setup**: During the configuration flow, a one-time "Identity Fetch" retrieves the Model, MAC, and Firmware versions.
+- **Storage**: This data is persisted in `ConfigEntry.data`.
+- **Initialization**: On Home Assistant restart, the `TPLinkRouterDataUpdateCoordinator` initializes its identity attributes directly from this memory-resident data before any network calls occur.

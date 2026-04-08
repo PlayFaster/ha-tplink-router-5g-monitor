@@ -1,6 +1,6 @@
 """Tests for the TP-Link Router coordinator."""
 
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 from homeassistant.helpers.update_coordinator import UpdateFailed

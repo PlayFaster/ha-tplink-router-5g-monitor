@@ -40,6 +40,8 @@ class TPLinkSensorEntityDescription(SensorEntityDescription):
     value_fn: Callable[[Any], Any]
     sensor_type: str = "status"
     group: str = "main"
+    min_limit: float | None = None
+    max_limit: float | None = None
 
 
 SENSOR_TYPES: Final[tuple[TPLinkSensorEntityDescription, ...]] = (
@@ -52,6 +54,8 @@ SENSOR_TYPES: Final[tuple[TPLinkSensorEntityDescription, ...]] = (
         native_unit_of_measurement=PERCENTAGE,
         suggested_display_precision=1,
         entity_category=EntityCategory.DIAGNOSTIC,
+        min_limit=0,
+        max_limit=100,
         value_fn=lambda data: (
             (data["status"].cpu_usage * 100)
             if data["status"].cpu_usage is not None
@@ -66,6 +70,8 @@ SENSOR_TYPES: Final[tuple[TPLinkSensorEntityDescription, ...]] = (
         native_unit_of_measurement=PERCENTAGE,
         suggested_display_precision=1,
         entity_category=EntityCategory.DIAGNOSTIC,
+        min_limit=0,
+        max_limit=100,
         value_fn=lambda data: (
             (data["status"].mem_usage * 100)
             if data["status"].mem_usage is not None
@@ -360,17 +366,9 @@ EXTRA_LTE_SENSOR_TYPES: Final[tuple[TPLinkSensorEntityDescription, ...]] = (
         native_unit_of_measurement=SIGNAL_STRENGTH_DECIBELS_MILLIWATT,
         device_class=SensorDeviceClass.SIGNAL_STRENGTH,
         sensor_type="extra_lte_status",
+        min_limit=-140,
+        max_limit=-40,
         value_fn=lambda data: data["extra_lte_status"].get("nr_rsrp"),
-    ),
-    TPLinkSensorEntityDescription(
-        key="nr_rssi",
-        name="5G RSSI",
-        icon="mdi:signal-cellular-3",
-        state_class=SensorStateClass.MEASUREMENT,
-        native_unit_of_measurement=SIGNAL_STRENGTH_DECIBELS_MILLIWATT,
-        device_class=SensorDeviceClass.SIGNAL_STRENGTH,
-        sensor_type="extra_lte_status",
-        value_fn=lambda data: data["extra_lte_status"].get("nr_rssi"),
     ),
     TPLinkSensorEntityDescription(
         key="nr_rsrq",
@@ -379,6 +377,8 @@ EXTRA_LTE_SENSOR_TYPES: Final[tuple[TPLinkSensorEntityDescription, ...]] = (
         state_class=SensorStateClass.MEASUREMENT,
         native_unit_of_measurement="dB",
         sensor_type="extra_lte_status",
+        min_limit=-25,
+        max_limit=0,
         value_fn=lambda data: data["extra_lte_status"].get("nr_rsrq"),
     ),
     TPLinkSensorEntityDescription(
@@ -387,7 +387,10 @@ EXTRA_LTE_SENSOR_TYPES: Final[tuple[TPLinkSensorEntityDescription, ...]] = (
         icon="mdi:signal-cellular-3",
         state_class=SensorStateClass.MEASUREMENT,
         native_unit_of_measurement="dB",
+        suggested_display_precision=1,
         sensor_type="extra_lte_status",
+        min_limit=-10,
+        max_limit=45,
         value_fn=lambda data: (
             0.1 * int(data["extra_lte_status"].get("nr_snr"))
             if data["extra_lte_status"].get("nr_snr")
@@ -401,6 +404,8 @@ EXTRA_LTE_SENSOR_TYPES: Final[tuple[TPLinkSensorEntityDescription, ...]] = (
         state_class=SensorStateClass.MEASUREMENT,
         native_unit_of_measurement=PERCENTAGE,
         sensor_type="extra_lte_status",
+        min_limit=0,
+        max_limit=100,
         value_fn=lambda data: data["extra_lte_status"].get("nr_signal_pct"),
     ),
     TPLinkSensorEntityDescription(
@@ -434,6 +439,8 @@ EXTRA_LTE_SENSOR_TYPES: Final[tuple[TPLinkSensorEntityDescription, ...]] = (
         icon="mdi:numeric",
         state_class=SensorStateClass.MEASUREMENT,
         sensor_type="extra_lte_status",
+        min_limit=0,
+        max_limit=31,
         value_fn=lambda data: data["extra_lte_status"].get("nr_dl_mcs"),
     ),
     TPLinkSensorEntityDescription(
@@ -442,6 +449,8 @@ EXTRA_LTE_SENSOR_TYPES: Final[tuple[TPLinkSensorEntityDescription, ...]] = (
         icon="mdi:numeric",
         state_class=SensorStateClass.MEASUREMENT,
         sensor_type="extra_lte_status",
+        min_limit=0,
+        max_limit=31,
         value_fn=lambda data: data["extra_lte_status"].get("nr_ul_mcs"),
     ),
     TPLinkSensorEntityDescription(
@@ -480,6 +489,7 @@ EXTRA_LTE_SENSOR_TYPES: Final[tuple[TPLinkSensorEntityDescription, ...]] = (
         native_unit_of_measurement="MHz",
         sensor_type="extra_lte_status",
         entity_category=EntityCategory.DIAGNOSTIC,
+        min_limit=100,
         value_fn=lambda data: data["extra_lte_status"].get("nr_ul_freq"),
     ),
     TPLinkSensorEntityDescription(
@@ -488,6 +498,8 @@ EXTRA_LTE_SENSOR_TYPES: Final[tuple[TPLinkSensorEntityDescription, ...]] = (
         icon="mdi:quality-high",
         state_class=SensorStateClass.MEASUREMENT,
         sensor_type="extra_lte_status",
+        min_limit=1,
+        max_limit=15,
         value_fn=lambda data: data["extra_lte_status"].get("nr_cqi"),
     ),
     TPLinkSensorEntityDescription(
@@ -496,8 +508,15 @@ EXTRA_LTE_SENSOR_TYPES: Final[tuple[TPLinkSensorEntityDescription, ...]] = (
         icon="mdi:transmission-tower-export",
         state_class=SensorStateClass.MEASUREMENT,
         native_unit_of_measurement="dBm",
+        suggested_display_precision=1,
         sensor_type="extra_lte_status",
-        value_fn=lambda data: data["extra_lte_status"].get("nr_tx_power"),
+        min_limit=-40,
+        max_limit=25,
+        value_fn=lambda data: (
+            0.1 * int(data["extra_lte_status"].get("nr_tx_power"))
+            if data["extra_lte_status"].get("nr_tx_power") is not None
+            else None
+        ),
     ),
     TPLinkSensorEntityDescription(
         key="nr_rbs",
@@ -505,6 +524,8 @@ EXTRA_LTE_SENSOR_TYPES: Final[tuple[TPLinkSensorEntityDescription, ...]] = (
         icon="mdi:office-building-marker",
         state_class=SensorStateClass.MEASUREMENT,
         sensor_type="extra_lte_status",
+        min_limit=0,
+        max_limit=273,
         value_fn=lambda data: data["extra_lte_status"].get("nr_rbs"),
     ),
     TPLinkSensorEntityDescription(
@@ -521,6 +542,7 @@ EXTRA_LTE_SENSOR_TYPES: Final[tuple[TPLinkSensorEntityDescription, ...]] = (
         icon="mdi:transmission-tower",
         sensor_type="extra_lte_status",
         entity_category=EntityCategory.DIAGNOSTIC,
+        min_limit=1,
         value_fn=lambda data: data["extra_lte_status"].get("nr_tac"),
     ),
     TPLinkSensorEntityDescription(
@@ -529,6 +551,7 @@ EXTRA_LTE_SENSOR_TYPES: Final[tuple[TPLinkSensorEntityDescription, ...]] = (
         icon="mdi:transmission-tower",
         sensor_type="extra_lte_status",
         entity_category=EntityCategory.DIAGNOSTIC,
+        min_limit=1,
         value_fn=lambda data: data["extra_lte_status"].get("nr_cid"),
     ),
     TPLinkSensorEntityDescription(
@@ -548,6 +571,8 @@ EXTRA_LTE_SENSOR_TYPES: Final[tuple[TPLinkSensorEntityDescription, ...]] = (
         native_unit_of_measurement=SIGNAL_STRENGTH_DECIBELS_MILLIWATT,
         device_class=SensorDeviceClass.SIGNAL_STRENGTH,
         sensor_type="extra_lte_status",
+        min_limit=-140,
+        max_limit=-40,
         value_fn=lambda data: data["extra_lte_status"].get("lte_rsrp"),
     ),
     TPLinkSensorEntityDescription(
@@ -558,6 +583,8 @@ EXTRA_LTE_SENSOR_TYPES: Final[tuple[TPLinkSensorEntityDescription, ...]] = (
         native_unit_of_measurement=SIGNAL_STRENGTH_DECIBELS_MILLIWATT,
         device_class=SensorDeviceClass.SIGNAL_STRENGTH,
         sensor_type="extra_lte_status",
+        min_limit=-120,
+        max_limit=-20,
         value_fn=lambda data: data["extra_lte_status"].get("lte_rssi"),
     ),
     TPLinkSensorEntityDescription(
@@ -567,6 +594,8 @@ EXTRA_LTE_SENSOR_TYPES: Final[tuple[TPLinkSensorEntityDescription, ...]] = (
         state_class=SensorStateClass.MEASUREMENT,
         native_unit_of_measurement="dB",
         sensor_type="extra_lte_status",
+        min_limit=-25,
+        max_limit=0,
         value_fn=lambda data: data["extra_lte_status"].get("lte_rsrq"),
     ),
     TPLinkSensorEntityDescription(
@@ -575,8 +604,15 @@ EXTRA_LTE_SENSOR_TYPES: Final[tuple[TPLinkSensorEntityDescription, ...]] = (
         icon="mdi:signal-cellular-2",
         state_class=SensorStateClass.MEASUREMENT,
         native_unit_of_measurement="dB",
+        suggested_display_precision=1,
         sensor_type="extra_lte_status",
-        value_fn=lambda data: data["extra_lte_status"].get("lte_snr"),
+        min_limit=-10,
+        max_limit=45,
+        value_fn=lambda data: (
+            0.1 * int(data["extra_lte_status"].get("lte_snr"))
+            if data["extra_lte_status"].get("lte_snr") is not None
+            else None
+        ),
     ),
     TPLinkSensorEntityDescription(
         key="lte_anchor_signal_pct",
@@ -585,6 +621,8 @@ EXTRA_LTE_SENSOR_TYPES: Final[tuple[TPLinkSensorEntityDescription, ...]] = (
         state_class=SensorStateClass.MEASUREMENT,
         native_unit_of_measurement=PERCENTAGE,
         sensor_type="extra_lte_status",
+        min_limit=0,
+        max_limit=100,
         value_fn=lambda data: data["extra_lte_status"].get("lte_signal_pct"),
     ),
     TPLinkSensorEntityDescription(
@@ -642,6 +680,8 @@ EXTRA_LTE_SENSOR_TYPES: Final[tuple[TPLinkSensorEntityDescription, ...]] = (
         icon="mdi:numeric",
         state_class=SensorStateClass.MEASUREMENT,
         sensor_type="extra_lte_status",
+        min_limit=0,
+        max_limit=31,
         value_fn=lambda data: data["extra_lte_status"].get("lte_dl_mcs"),
     ),
     TPLinkSensorEntityDescription(
@@ -650,6 +690,8 @@ EXTRA_LTE_SENSOR_TYPES: Final[tuple[TPLinkSensorEntityDescription, ...]] = (
         icon="mdi:numeric",
         state_class=SensorStateClass.MEASUREMENT,
         sensor_type="extra_lte_status",
+        min_limit=0,
+        max_limit=31,
         value_fn=lambda data: data["extra_lte_status"].get("lte_ul_mcs"),
     ),
     TPLinkSensorEntityDescription(
@@ -672,6 +714,8 @@ EXTRA_LTE_SENSOR_TYPES: Final[tuple[TPLinkSensorEntityDescription, ...]] = (
         icon="mdi:quality-high",
         state_class=SensorStateClass.MEASUREMENT,
         sensor_type="extra_lte_status",
+        min_limit=1,
+        max_limit=15,
         value_fn=lambda data: data["extra_lte_status"].get("lte_cqi"),
     ),
     TPLinkSensorEntityDescription(
@@ -680,6 +724,8 @@ EXTRA_LTE_SENSOR_TYPES: Final[tuple[TPLinkSensorEntityDescription, ...]] = (
         icon="mdi:numeric",
         state_class=SensorStateClass.MEASUREMENT,
         sensor_type="extra_lte_status",
+        min_limit=1,
+        max_limit=4,
         value_fn=lambda data: data["extra_lte_status"].get("lte_ri"),
     ),
     TPLinkSensorEntityDescription(
@@ -706,6 +752,8 @@ EXTRA_LTE_SENSOR_TYPES: Final[tuple[TPLinkSensorEntityDescription, ...]] = (
         state_class=SensorStateClass.MEASUREMENT,
         native_unit_of_measurement="dBm",
         sensor_type="extra_lte_status",
+        min_limit=-40,
+        max_limit=25,
         value_fn=lambda data: data["extra_lte_status"].get("lte_tx_power"),
     ),
     TPLinkSensorEntityDescription(
@@ -714,6 +762,8 @@ EXTRA_LTE_SENSOR_TYPES: Final[tuple[TPLinkSensorEntityDescription, ...]] = (
         icon="mdi:office-building-marker",
         state_class=SensorStateClass.MEASUREMENT,
         sensor_type="extra_lte_status",
+        min_limit=0,
+        max_limit=100,
         value_fn=lambda data: data["extra_lte_status"].get("lte_rbs"),
     ),
     TPLinkSensorEntityDescription(
@@ -800,7 +850,8 @@ class TPLinkRouterSensor(
         if not self.coordinator.data:
             return None
 
-        key = self.entity_description.key
+        description = self.entity_description
+        key = description.key
 
         # Special case: Last Updated
         if key == "last_updated":
@@ -809,7 +860,7 @@ class TPLinkRouterSensor(
         # Special case: Stable Timestamp for Uptime
         if key == "wan_uptime":
             try:
-                uptime_seconds = self.entity_description.value_fn(self.coordinator.data)
+                uptime_seconds = description.value_fn(self.coordinator.data)
                 if uptime_seconds is not None:
                     seconds = int(float(uptime_seconds))
                     boot_time = dt_util.now() - timedelta(seconds=seconds)
@@ -818,9 +869,33 @@ class TPLinkRouterSensor(
                 return None
 
         try:
-            return self.entity_description.value_fn(self.coordinator.data)
+            value = description.value_fn(self.coordinator.data)
         except (KeyError, AttributeError):
             return None
+
+        if value is None:
+            return None
+
+        # Apply Guard Bands (Option C)
+        if isinstance(value, int | float):
+            if description.min_limit is not None and value < description.min_limit:
+                _LOGGER.debug(
+                    "Sensor %s value %s below min_limit %s",
+                    key,
+                    value,
+                    description.min_limit,
+                )
+                return None
+            if description.max_limit is not None and value > description.max_limit:
+                _LOGGER.debug(
+                    "Sensor %s value %s above max_limit %s",
+                    key,
+                    value,
+                    description.max_limit,
+                )
+                return None
+
+        return value
 
     @property
     def device_info(self):
