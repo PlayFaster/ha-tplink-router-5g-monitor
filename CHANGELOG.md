@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## [1.0.0] - 2026-04-08
 
-Initial GitHub release for this Home Assistant custom component specifically designed for the **TP-Link NX510v 5G Router**,  focused  on providing as much 5G/LTE signal data as possible, along with the standard router features.
+Initial GitHub release for this Home Assistant custom component specifically designed for the **TP-Link NX510v 5G Router**, focused on providing as much 5G/LTE signal data as possible, along with the standard router features.
 
 ### Added
 

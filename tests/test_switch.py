@@ -101,8 +101,14 @@ def test_wifi_switch_device_info_no_mac(mock_coordinator, mock_config_entry):
 
     mock_coordinator.mac = None
     info = switch.device_info
-    assert info["identifiers"] == {(DOMAIN, "host_192.168.253.1_wifi")}
-    assert info["via_device"] == (DOMAIN, "host_192.168.253.1")
+
+    # Check identifiers
+    expected_id = "host_192.168.253.1_wifi"
+    assert info["identifiers"] == {(DOMAIN, expected_id)}
+
+    # Check via_device
+    expected_via = (DOMAIN, "host_192.168.253.1")
+    assert info["via_device"] == expected_via
 
 
 @pytest.mark.asyncio

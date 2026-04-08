@@ -449,11 +449,8 @@ async def test_api_get_lte_parsing_error():
         client.req_act = MagicMock()
         client.ActItem = MagicMock()
 
-        # Trigger TypeError/AttributeError by passing an int where dict expected
-        mock_values = [
-            None,
-            123,
-        ]  # 123.get() will trigger AttributeError
+        # Trigger AttributeError by passing a string where list expected
+        mock_values = "STRICTLY_INVALID"
         client.req_act.return_value = (None, mock_values)
 
         # Should log error and return

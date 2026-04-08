@@ -74,8 +74,10 @@ class TPLinkRebootButton(
         """Handle the button press."""
         try:
             await self.coordinator.api.login()
-            await self.coordinator.api.reboot()
-            await self.coordinator.api.logout()
+            try:
+                await self.coordinator.api.reboot()
+            finally:
+                await self.coordinator.api.logout()
         except Exception as err:
             _LOGGER.error("%s: Reboot failed: %s", self._entry.title, err)
 
