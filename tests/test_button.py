@@ -50,14 +50,15 @@ async def test_button_setup_entry():
 
 
 @pytest.mark.asyncio
-async def test_reboot_button_press_error(mock_coordinator, mock_config_entry):
+async def test_reboot_button_press_error(mock_coordinator, mock_config_entry, mock_api):
     """Test reboot button press with an error."""
     description = next(d for d in BUTTON_TYPES if d.key == "reboot")
-    mock_coordinator.api.login = AsyncMock()
-    mock_coordinator.api.logout = AsyncMock()
-    mock_coordinator.api.reboot = AsyncMock(side_effect=Exception("Reboot failed"))
+    mock_coordinator.api = mock_api
+    mock_api.reboot.side_effect = Exception("Reboot failed")
     button = TPLinkRebootButton(mock_coordinator, mock_config_entry, description)
 
     # Should not raise exception
     await button.async_press()
-    mock_coordinator.api.reboot.assert_called_once()
+    mock_api.reboot.assert_called_once()
+    mock_api.login.assert_called_once()
+    mock_api.logout.assert_called_once()

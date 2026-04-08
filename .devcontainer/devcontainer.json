@@ -3,6 +3,12 @@
   "dockerComposeFile": "docker-compose.yml",
   "service": "homeassistant",
   "workspaceFolder": "/workspaces/ha-tplink-router-5g-monitor",
+  "features": {
+    "ghcr.io/devcontainers/features/git-configs:1": {
+      "coreFileMode": "false",
+      "coreAutoCrlf": "input"
+    }
+  },
   "_comment": "Added -U to ensure it upgrades if a cached version is old",
   "postCreateCommand": "sh .devcontainer/setup.sh",
   "mounts": [
