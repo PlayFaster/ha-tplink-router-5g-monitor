@@ -92,6 +92,7 @@ jobs:
         run: |
           pytest --cov=custom_components/tplink_router_5g \
             --cov-report=xml \
+            --cov-report=term-missing \
             --junitxml=pytest.xml \
             tests/
 
@@ -108,6 +109,27 @@ jobs:
           junitxml-path: ./pytest.xml
           create-badge: true
           badge-filename: coverage-badge.json
+
+      - name: Extract Coverage Percentage
+        id: extract_cov
+        shell: bash
+        run: |
+          # This pulls the TOTAL percentage from the coverage report
+          # and saves it as an environment variable
+          COVERAGE=$(coverage report | grep TOTAL | awk '{print $NF}' | tr -d '%')
+          echo "PERCENTAGE=$COVERAGE" >> $GITHUB_OUTPUT
+
+      - name: Update Coverage Badge Gist
+        uses: schneegans/dynamic-badges-action@v1.7.0
+        with:
+          auth: ${{ secrets.GIST_SECRET }}
+          gistID: 675e676c97824300d147c724b74dda60
+          filename: coverage.json
+          label: Coverage
+          message: ${{ steps.extract_cov.outputs.PERCENTAGE }}%
+          valColorRange: ${{ steps.extract_cov.outputs.PERCENTAGE }}
+          maxColorRange: 100
+          minColorRange: 0
 
   # Job 5: File-level integrity (JSON, YAML, and Markdown).
   file_val:
