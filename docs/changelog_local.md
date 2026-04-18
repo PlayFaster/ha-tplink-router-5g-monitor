@@ -26,7 +26,13 @@ All notable changes to this project will be documented in this file.
 - **Code Integrity**: Resolved a startup SyntaxError and cleaned up duplicate entity definitions in the sensor platform.
 - **Sensor Cleanup**: Resolved a SyntaxError caused by a trailing brace and eliminated duplicate entity registrations in the technical metrics platform.
 
-## [1.0.0] - 2026-04-08
+## [1.1.1] - 2026-04-18
+
+### Changed
+
+- **Data Usage Naming**: Refactored misleading sensor labels. "Daily Data Usage" is now **"Monthly Download"** and "Total Data Statistics" is **"Monthly Usage"**, as these OIDs track cumulative usage rather than daily resets.
+
+## [1.1.0] - 2026-04-08
 
 Initial GitHub release for this Home Assistant custom component specifically designed for the **TP-Link NX510v 5G Router**, focused on providing as much 5G/LTE signal data as possible, along with the standard router features.
 

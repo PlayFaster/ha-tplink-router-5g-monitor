@@ -268,7 +268,7 @@ SENSOR_TYPES: Final[tuple[TPLinkSensorEntityDescription, ...]] = (
     ),
     TPLinkSensorEntityDescription(
         key="lte_total_statistics",
-        name="Total Data Statistics",
+        name="Monthly Usage",
         icon="mdi:sim-outline",
         state_class=SensorStateClass.TOTAL_INCREASING,
         native_unit_of_measurement=UnitOfInformation.BYTES,
