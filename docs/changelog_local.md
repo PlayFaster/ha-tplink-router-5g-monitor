@@ -20,6 +20,7 @@ All notable changes to this project will be documented in this file.
 
 - **Standardized Naming**: Entity and Device names now consistently follow the `[Custom Name] [Group]` pattern for improved readability and organization.
 - **Refactored Entity Grouping**: Migrated Wi-Fi controls to the `Home Network` group and polling controls to the `System` group to better align with hardware functions.
+
 ### Fixed
 
 - **Code Integrity**: Resolved a startup SyntaxError and cleaned up duplicate entity definitions in the sensor platform.
