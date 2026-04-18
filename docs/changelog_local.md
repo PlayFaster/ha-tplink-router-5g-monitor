@@ -2,7 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
-## [1.0.1] - Unreleased
+## [1.1.1] - 2026-04-18
+
+### Changed
+
+- **Library Update**: Verified with supporting TP-Link Router [library](https://github.com/AlexandrErohin/TP-Link-Archer-C6U) v5.18.1 (from v5.17.1).
+- **Data Usage Naming**: Renamed Data Usage to **"Monthly Usage"** and **"Monthly Download"** to better reflect hardware reporting behavior and monthly reset cycles.
+- **Data Usage Naming**: Refactored misleading sensor labels. "Daily Data Usage" is now **"Monthly Download"** and "Total Data Statistics" is **"Monthly Usage"**, as these OIDs track cumulative usage rather than daily resets.
+
+## [1.1.0] - 2026-04-08
 
 ### Added
 
@@ -20,6 +28,7 @@ All notable changes to this project will be documented in this file.
 
 - **Standardized Naming**: Entity and Device names now consistently follow the `[Custom Name] [Group]` pattern for improved readability and organization.
 - **Refactored Entity Grouping**: Migrated Wi-Fi controls to the `Home Network` group and polling controls to the `System` group to better align with hardware functions.
+
 ### Fixed
 
 - **Code Integrity**: Resolved a startup SyntaxError and cleaned up duplicate entity definitions in the sensor platform.

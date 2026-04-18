@@ -16,29 +16,30 @@ We use a **Declarative Validation** approach. Limits are defined directly within
 
 ## Validated Signal Limits
 
-| Metric Category    | Metric Name         | Min  | Max    | Action if Out of Bounds   |
-| :----------------- | :------------------ | :--- | :----- | :------------------------ |
-| **Signal Power**   | RSRP (5G/LTE)       | -140 | -40    | Set to `Unavailable`      |
-|                    | RSRQ (5G/LTE)       | -25  | 0      | Set to `Unavailable`      |
-|                    | RSSI (5G)           | -125 | -20    | Set to `Unavailable`      |
-|                    | RSSI (LTE)          | -120 | -20    | Set to `Unavailable`      |
-| **Signal Quality** | SNR / SINR          | -10  | 45     | Set to `Unavailable`      |
-|                    | CQI                 | 1    | 15     | Set to `Unknown`          |
-| **Efficiency**     | MCS (DL/UL)         | 0    | 31     | Set to `Idle` / `Unknown` |
-|                    | RI (Rank)           | 1    | 4      | Set to `Unknown`          |
-| **Performance**    | Resource Blocks     | 0    | 273    | Set to `Unavailable`      |
-|                    | Transmit Power      | -40  | 25     | Set to `Unavailable`      |
-| **Diagnostics**    | Cell ID / TAC       | 1    | -      | Set to `Unavailable` if 0 |
-|                    | Uplink Frequency    | 100  | -      | Set to `Unavailable` if 0 |
-|                    | PCI (LTE & 5G)      | 0    | 1007   | Set to `Unavailable`      |
-|                    | ARFCN (LTE & 5G)    | 1    | 3.3M   | Set to `Unavailable`      |
-| **Data Usage**     | Daily/Monthly Usage | 0    | 100TB  | Set to `Unavailable`      |
-|                    | Data Remaining      | 0    | 100TB  | Set to `Unavailable`      |
-|                    | Reset Day           | 1    | 31     | Set to `Unavailable`      |
-| **Data Rates**     | Download/Upload     | 0    | 10Gbps | Set to `Unavailable`      |
-| **Clients**        | Total/Wired/WiFi    | 0    | 512    | Set to `Unavailable`      |
-| **SMS**            | Unread Count        | 0    | 1000   | Set to `Unavailable`      |
-| **Environment**    | CPU / Memory        | 0    | 100    | Set to `Unavailable`      |
+| Metric Category    | Metric Name      | Min  | Max    | Action if Out of Bounds   |
+| :----------------- | :--------------- | :--- | :----- | :------------------------ |
+| **Signal Power**   | RSRP (5G/LTE)    | -140 | -40    | Set to `Unavailable`      |
+|                    | RSRQ (5G/LTE)    | -25  | 0      | Set to `Unavailable`      |
+|                    | RSSI (5G)        | -125 | -20    | Set to `Unavailable`      |
+|                    | RSSI (LTE)       | -120 | -20    | Set to `Unavailable`      |
+| **Signal Quality** | SNR / SINR       | -10  | 45     | Set to `Unavailable`      |
+|                    | CQI              | 1    | 15     | Set to `Unknown`          |
+| **Efficiency**     | MCS (DL/UL)      | 0    | 31     | Set to `Idle` / `Unknown` |
+|                    | RI (Rank)        | 1    | 4      | Set to `Unknown`          |
+| **Performance**    | Resource Blocks  | 0    | 273    | Set to `Unavailable`      |
+|                    | Transmit Power   | -40  | 25     | Set to `Unavailable`      |
+| **Diagnostics**    | Cell ID / TAC    | 1    | -      | Set to `Unavailable` if 0 |
+|                    | Uplink Frequency | 100  | -      | Set to `Unavailable` if 0 |
+|                    | PCI (LTE & 5G)   | 0    | 1007   | Set to `Unavailable`      |
+|                    | ARFCN (LTE & 5G) | 1    | 3.3M   | Set to `Unavailable`      |
+| **Data Usage**     | Monthly Download | 0    | 100TB  | Set to `Unavailable`      |
+|                    | Monthly Usage    | 0    | 100TB  | Set to `Unavailable`      |
+|                    | Data Remaining   | 0    | 100TB  | Set to `Unavailable`      |
+|                    | Reset Day        | 1    | 31     | Set to `Unavailable`      |
+| **Data Rates**     | Download/Upload  | 0    | 10Gbps | Set to `Unavailable`      |
+| **Clients**        | Total/Wired/WiFi | 0    | 512    | Set to `Unavailable`      |
+| **SMS**            | Unread Count     | 0    | 1000   | Set to `Unavailable`      |
+| **Environment**    | CPU / Memory     | 0    | 100    | Set to `Unavailable`      |
 
 ---
 

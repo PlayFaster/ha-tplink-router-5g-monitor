@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.1.1] - 2026-04-18
+
+### Changed
+
+- **Library Update**: Verified with supporting TP-Link Router [library](https://github.com/AlexandrErohin/TP-Link-Archer-C6U) v5.18.1 (from v5.17.1).
+- **Data Usage Naming**: Renamed Data Usage to **"Monthly Usage"** and **"Monthly Download"** to better reflect hardware reporting behavior and monthly reset cycles.
+
 ## [1.1.0] - 2026-04-08
 
 ### Added
