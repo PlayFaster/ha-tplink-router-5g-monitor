@@ -25,7 +25,7 @@ npm install -g @google/gemini-cli markdown-link-check markdownlint-cli prettier 
 # 5. Gemini CLI Configuration
 echo "Configuring Gemini CLI..." | tee -a .reports/devcontainer/post_setup.log ;
 # Clean up path by stripping any carriage returns
-NODE_ROOT=`npm root -g | tr -d '\r'` ;
+NODE_ROOT=$(npm root -g | tr -d '\r') ;
 REAL_GEMINI_PATH="$NODE_ROOT/@google/gemini-cli/bundle/gemini.js" ;
 
 # Use series of && to avoid if/then/else/fi syntax errors with Windows line endings
