@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.1.2-dev1] - Unreleased
+
+### Fixed
+
+- **Screenshot**: Corrected the screenshot for data entities to show updated naming.
+
 ## [1.1.1] - 2026-04-18
 
 ### Changed
