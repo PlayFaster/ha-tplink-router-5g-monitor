@@ -2,7 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
-## [1.1.2-dev1] - Unreleased
+## [1.2.0] - 2026-04-27
+
+### Changed
+
+- **Project Archived**: Project is now archived - available but not actively supported as I no longer have access to the TP-Link hardware.
 
 ### Fixed
 

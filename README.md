@@ -2,6 +2,10 @@
 
 ![HACS Integration](https://img.shields.io/badge/HACS-Integration-orange.svg) ![HACS Custom](https://img.shields.io/badge/HACS-Custom-41BDF5?logo=homeassistant&logoColor=white) ![Latest Release](https://img.shields.io/github/v/release/PlayFaster/ha-tplink-router-5g-monitor?label=Release&logo=github) [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0) [![Validate](https://github.com/PlayFaster/ha-tplink-router-5g-monitor/actions/workflows/validate.yaml/badge.svg)](https://github.com/PlayFaster/ha-tplink-router-5g-monitor/actions/workflows/validate.yaml) ![Coverage](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/PlayFaster/675e676c97824300d147c724b74dda60/raw/coverage.json) ![Last Commit](https://img.shields.io/github/last-commit/PlayFaster/ha-tplink-router-5g-monitor?label=Last%20commit)
 
+> [!WARNING] ⚠️ Project Archived ⚠️
+>
+> ⚠️⚠️ This repository is archived and provided as-is. As I no longer have access to the TP-Link NX510v hardware, I am unable to provide support, test fixes, or accept Pull Requests. You are welcome to fork this project if you wish to continue development. ⚠️⚠️
+
 A Home Assistant integration specifically designed for the **TP-Link NX510v 5G Router**. This component provides extensive signal diagnostics and data tracking.
 
 > [!NOTE] This project extends the excellent work of [AlexandrErohin/home-assistant-tplink-router](https://github.com/AlexandrErohin/home-assistant-tplink-router). It is optimized to provide 5G/LTE metrics.
@@ -173,9 +177,11 @@ After setup, you can modify options (e.g. password change) anytime: **Settings >
 - Use the **Pause Polling** control switch in Home Assistant to give you extended access to the web UI if needed.
 - Resume polling when done!
 
-## 📝 Maintenance Status
+## ⚠️ Maintenance Status ⚠️
 
-This is a **personal project**. Support and updates are provided on a **"best-effort"** basis only. While I use this integration daily and aim to keep it functional with the latest Home Assistant releases, I cannot guarantee immediate fixes for issues or compatibility with all router firmware versions.
+- This repository is archived and provided as-is.
+- As I no longer have access to the TP-Link NX510v hardware, I am unable to provide support, test fixes, or accept Pull Requests.
+- You are welcome to fork this project if you wish to continue development.
 
 ## 🤝 Contributors & Acknowledgements
 
@@ -187,5 +193,3 @@ This is a **personal project**. Support and updates are provided on a **"best-ef
 This project is licensed under the Apache License, Version 2.0. See [LICENSE](LICENSE) for details.
 
 ---
-
-**Questions or Issues?** Visit the [GitHub repository](https://github.com/PlayFaster/ha-tplink-router-5g-monitor).
