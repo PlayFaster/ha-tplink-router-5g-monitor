@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.2.0] - 2026-04-27
+
+### Changed
+
+- **Project Archived**: Project is now archived - available but not actively supported as I no longer have access to the TP-Link hardware.
+
+### Fixed
+
+- **Screenshot**: Corrected the screenshot for data entities to show updated naming.
+
 ## [1.1.1] - 2026-04-18
 
 ### Changed
